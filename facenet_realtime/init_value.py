@@ -34,6 +34,9 @@ class init_value():
             os.makedirs(self.rotdet_data_path)
 
         self.model_path = self.project_path + 'pre_model/'
+        if not os.path.exists(self.model_path):
+            os.makedirs(self.model_path)
+
         self.model_name_detect = self.project_path + 'pre_model/my_classifier_detect.pkl'
         self.model_name_rotate = self.project_path + 'pre_model/my_classifier_rotate.pkl'
         self.model_name_rotdet = self.project_path + 'pre_model/my_classifier_rotdet.pkl'
