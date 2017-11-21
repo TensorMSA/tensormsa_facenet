@@ -12,7 +12,7 @@ import dlib, bz2, cv2
 class AlignDatasetRotation():
     def rotation_dataset(self, input_path, output_path):
         init_value.init_value.init(self)
-
+        images_total = 0
         predictor, detector = self.face_rotation_predictor_download()
 
         dir_list = os.listdir(input_path)
@@ -25,6 +25,8 @@ class AlignDatasetRotation():
 
             d_cnt = 1
             for img in file_list:
+                images_total += 1
+                print('rotate('+str(images_total)+'):'+output_path + dirList + '/d'+str(d_cnt) + '_' + img)
                 image = [cv2.imread(input_path+'/'+dirList+'/'+img)]
                 try:
                     image, _, _ = self.face_rotation(image[0], predictor, detector)

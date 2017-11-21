@@ -34,10 +34,10 @@ class ClassifierImage():
                 embedding_size = embeddings.get_shape()[1]
 
                 # Run forward pass to calculate embeddings
-                print('Calculating features for images')
                 nrof_images = len(paths)
                 nrof_batches_per_epoch = int(math.ceil(1.0 * nrof_images / self.batch_size))
                 emb_array = np.zeros((nrof_images, embedding_size))
+                print('Calculating features for images:(' + str(len(range(nrof_batches_per_epoch))) + ')')
                 for i in range(nrof_batches_per_epoch):
                     start_index = i * self.batch_size
                     end_index = min((i + 1) * self.batch_size, nrof_images)

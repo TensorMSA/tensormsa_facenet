@@ -40,6 +40,7 @@ class AlignDatasetMtcnn():
                     nrof_images_total += 1
                     filename = os.path.splitext(os.path.split(image_path)[1])[0]
                     output_filename = os.path.join(output_class_dir, filename + '.png')
+                    print('detect('+str(nrof_images_total)+'):'+output_class_dir + filename + '.png')
 
                     if not os.path.exists(output_filename):
                         try:
