@@ -2,8 +2,12 @@ import os
 
 class init_value():
     def init(self):
-        # 틀린 이미지를 찾을때 사용한다.
-        self.debug = True
+        # 이미지 Log를 볼때 사용한다.
+        # A:True, False 로그를 모두 본다.
+        # T:True 인 것만 본다.
+        # F:False인 것만 본다.
+        # N:보지 않는다.
+        self.debug = 'A'
         # 인식X or Multy 이미지를 찾을때 사용한다.
         self.recogmsg = False
 

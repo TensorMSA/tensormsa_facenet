@@ -23,7 +23,7 @@ class DataNodeImage():
     def realtime(self):
         init_value.init_value.init(self)
         # self.realtime_run(self.model_name_detect, 'detect', 'eval')
-        # self.realtime_run(self.model_name_rotdet, 'rotdet', 'eval')
+        self.realtime_run(self.model_name_rotdet, 'rotdet', 'eval')
 
         # self.realtime_run(self.model_name_detect, 'detect', 'test')
         self.realtime_run(self.model_name_rotdet, 'rotdet', 'test')
@@ -242,15 +242,20 @@ class DataNodeImage():
                         total_none += 1
                         self.pred_msg(predcnt, evalfile_path, evalfile)
                     elif evaldir == self.HumanNamesSort[predcnt]:
+                        if self.debug == 'A' or self.debug == 'T':
+                            lable = self.HumanNamesSort[predcnt]
+                            t_cnt = total_true + total_false + total_none
+                            print('True('+str(t_cnt)+'):' + evalfile_path + '/' + evalfile + ' [ True=' + evaldir + ', Predict=' + lable + ' ]')
                         true_cnt += 1
                         total_true += 1
                     else :
-                        if self.debug == True:
+                        if self.debug == 'A' or self.debug == 'F':
                             lable = self.HumanNamesSort[predcnt]
+                            t_cnt = total_true + total_false + total_none
                             if len(pred) > 1:
-                                print('FalseMulty :'+evalfile_path+'/'+evalfile+' [ True='+evaldir+', Predict='+lable+' ]')
+                                print('FalseMulty('+str(t_cnt)+':'+evalfile_path+'/'+evalfile+' [ True='+evaldir+', Predict='+lable+' ]')
                             else:
-                                print('False :'+evalfile_path+'/'+evalfile+' [ True='+evaldir+', Predict='+lable+' ]')
+                                print('False('+str(t_cnt)+':'+evalfile_path+'/'+evalfile+' [ True='+evaldir+', Predict='+lable+' ]')
 
                         false_cnt += 1
                         total_false += 1
