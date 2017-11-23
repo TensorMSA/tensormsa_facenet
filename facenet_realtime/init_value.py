@@ -7,10 +7,11 @@ class init_value():
         # T:True 인 것만 본다.
         # F:False인 것만 본다.
         # N:보지 않는다.
-        self.debug = 'A'
+        self.debug = 'N'
         # 인식X or Multy 이미지를 찾을때 사용한다.
         self.recogmsg = False
 
+        self.image_resize = 300
         self.image_size = 160
         self.batch_size = 1000
         self.minsize = 20  # minimum size of face
