@@ -8,11 +8,13 @@ from imutils.face_utils import FaceAligner
 from imutils.face_utils import rect_to_bb
 import wget
 import dlib, bz2, cv2
+from scipy import misc
 
 class AlignDatasetRotation():
-    def rotation_dataset(self, input_path, output_path):
+    def rotation_dataset(self, input_path, output_path, resize_flag = None):
         init_value.init_value.init(self)
         images_total = 0
+        images_total_rotate = 0
         predictor, detector = self.face_rotation_predictor_download()
 
         dir_list = os.listdir(input_path)
@@ -23,18 +25,30 @@ class AlignDatasetRotation():
             if not os.path.exists(output_path + dirList):
                 os.makedirs(output_path + dirList)
 
-            d_cnt = 1
             for img in file_list:
                 images_total += 1
-                print('rotate('+str(images_total)+'):'+output_path + dirList + '/d'+str(d_cnt) + '_' + img)
-                image = [cv2.imread(input_path+'/'+dirList+'/'+img)]
-                try:
-                    image, _, _ = self.face_rotation(image[0], predictor, detector)
-                    for faArr in image:
-                        cv2.imwrite(output_path + dirList + '/d'+str(d_cnt) + '_' + img, faArr)
-                        d_cnt += 1
-                except:
-                    print('Lotation Error:'+input_path+'/'+dirList+'/'+img)
+                output_filename = output_path + dirList + '/'+ img
+                print('rotate('+str(images_total)+'):'+output_filename )
+                if not os.path.exists(output_filename):
+                    image = [cv2.imread(input_path+'/'+dirList+'/'+img)]
+
+                    max_size = max(image[0].shape)
+
+                    if (self.image_resize < max_size and resize_flag == True):
+                        image[0] = misc.imresize(image[0], (self.image_resize / max_size))
+
+                    try:
+                        image, _, _ = self.face_rotation(image[0], predictor, detector)
+                        for faArr in image:
+                            cv2.imwrite(output_filename, faArr)
+                        if len(image) > 0:
+                            images_total_rotate += 1
+                    except:
+                        print('Lotation Error:'+input_path+'/'+dirList+'/'+img)
+
+        print('Total number of images: ' + str(images_total))
+        print('Number of successfully aligned images: '+str(images_total_rotate))
+        print('============================================================================================')
 
     def face_rotation(self, image, predictor, detector, rectype = None):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

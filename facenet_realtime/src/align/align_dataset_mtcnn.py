@@ -13,7 +13,7 @@ from facenet_realtime import init_value
 from facenet_realtime.src.common import facenet
 
 class AlignDatasetMtcnn():
-    def align_dataset(self, input_path, output_path):
+    def align_dataset(self, input_path, output_path, resize_flag = None):
         init_value.init_value.init(self)
 
         dataset = facenet.get_dataset(input_path)
@@ -27,9 +27,10 @@ class AlignDatasetMtcnn():
 
         # Add a random key to the filename to allow alignment using multiple processes
         random_key = np.random.randint(0, high=99999)
-        bounding_boxes_filename = os.path.join(output_dir, self.bounding_boxes+'_%05d.txt' % random_key)
+        bounding_boxes_filename = self.bounding_boxes+'_'+str(random_key)+'.txt'
+        bounding_boxes_text = os.path.join(output_dir, bounding_boxes_filename)
 
-        with open(bounding_boxes_filename, "w") as text_file:
+        with open(bounding_boxes_text, "w") as text_file:
             nrof_images_total = 0
             nrof_successfully_aligned = 0
             for cls in dataset:
@@ -40,11 +41,16 @@ class AlignDatasetMtcnn():
                     nrof_images_total += 1
                     filename = os.path.splitext(os.path.split(image_path)[1])[0]
                     output_filename = os.path.join(output_class_dir, filename + '.png')
-                    print('detect('+str(nrof_images_total)+'):'+output_class_dir + filename + '.png')
+                    print('detect('+str(nrof_images_total)+'):'+output_class_dir + '/'+ filename + '.png')
 
                     if not os.path.exists(output_filename):
                         try:
                             img = misc.imread(image_path)
+                            max_size = max(img.shape)
+
+                            if(self.image_resize < max_size and resize_flag == True):
+                                img = misc.imresize(img, (self.image_resize/max_size))
+
                         except (IOError, ValueError, IndexError) as e:
                             errorMessage = '{}: {}'.format(image_path, e)
                             print(errorMessage)
@@ -101,4 +107,7 @@ class AlignDatasetMtcnn():
 
         print('Total number of images: %d' % nrof_images_total)
         print('Number of successfully aligned images: %d' % nrof_successfully_aligned)
+        print('============================================================================================')
+        if nrof_successfully_aligned == 0:
+            os.remove(output_dir+ '/'+ bounding_boxes_filename)
 
