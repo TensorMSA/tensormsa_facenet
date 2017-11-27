@@ -96,8 +96,6 @@ class DataNodeImage():
                 best_class_boxR.append([0, 0, 0, 0])
 
         for frame in frameArr:
-            frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)  # resize frame (optional)
-
             if frame.ndim == 2:
                 frame = facenet.to_rgb(frame)
             frame = frame[:, :, 0:3]
@@ -194,6 +192,7 @@ class DataNodeImage():
                 else:
                     break
 
+            frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)  # resize frame (optional)
             frameArr = [frame]
 
             pred, frame = self.getpredict(sess, frameArr)
