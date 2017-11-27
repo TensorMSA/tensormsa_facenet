@@ -23,12 +23,12 @@ class DataNodeImage():
     def realtime(self):
         init_value.init_value.init(self)
         # self.realtime_run(self.model_name_detect, 'detect', 'eval')
-        self.realtime_run(self.model_name_rotdet, 'rotdet', 'eval')
+        # self.realtime_run(self.model_name_rotdet, 'rotdet', 'eval')
 
         # self.realtime_run(self.model_name_detect, 'detect', 'test')
-        self.realtime_run(self.model_name_rotdet, 'rotdet', 'test')
+        # self.realtime_run(self.model_name_rotdet, 'rotdet', 'test')
 
-        # self.realtime_run(self.model_name_detect, 'detect', 'real')
+        self.realtime_run(self.model_name_detect, 'detect', 'real')
         # self.realtime_run(self.model_name_rotdet, 'rotdet', 'real')
 
     def realtime_run(self, modelName, detectType=None, evalType=None):
@@ -144,6 +144,8 @@ class DataNodeImage():
                     best_class_indices = np.argmax(predictions, axis=1)
                     best_class.append(best_class_indices[0])
                     best_class_box.append([bb[i][0],bb[i][1],bb[i][2],bb[i][3]])
+                    cv2.rectangle(frame, (best_class_box[i][0], best_class_box[i][1]),
+                                  (best_class_box[i][2], best_class_box[i][3]), self.box_color, 1)
 
             else:
                 best_class.append(-2)
@@ -152,7 +154,7 @@ class DataNodeImage():
         if self.detectType == 'detect':
             for bc in best_class:
                 result_names = self.HumanNames[bc]
-                cv2.rectangle(frame, (best_class_box[i][0], best_class_box[i][1]), (best_class_box[i][2], best_class_box[i][3]), self.box_color, 1)
+
                 if bc >= 0:
                     # cv2.putText(frame, result_names, (best_class_box[i][0], best_class_box[i][1]), cv2.FONT_HERSHEY_COMPLEX_SMALL,
                     #         1, self.text_color, thickness=1, lineType=1)
@@ -182,8 +184,8 @@ class DataNodeImage():
 
     def facenet_capture(self, sess):
         testCnt = 0
+        video_capture = cv2.VideoCapture(0)
         while True:
-            video_capture = cv2.VideoCapture(0)
             ret, frame = video_capture.read()
             if self.evalType == 'test':
                 if testCnt < len(self.test_data_files):
