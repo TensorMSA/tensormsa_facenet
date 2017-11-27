@@ -28,8 +28,8 @@ class DataNodeImage():
         # self.realtime_run(self.model_name_detect, 'detect', 'test')
         # self.realtime_run(self.model_name_rotdet, 'rotdet', 'test')
 
-        self.realtime_run(self.model_name_detect, 'detect', 'real')
-        # self.realtime_run(self.model_name_rotdet, 'rotdet', 'real')
+        # self.realtime_run(self.model_name_detect, 'detect', 'real')
+        self.realtime_run(self.model_name_rotdet, 'rotdet', 'real')
 
     def realtime_run(self, modelName, detectType=None, evalType=None):
         '''
@@ -159,7 +159,7 @@ class DataNodeImage():
                     frame = Image.fromarray(np.uint8(frame))
                     draw = ImageDraw.Draw(frame)
                     font = ImageFont.truetype(self.font_location, 16)
-                    draw.text((best_class_box[i][0], best_class_box[i][1]), result_names, self.text_color, font=font)
+                    draw.text((best_class_box[i][0], best_class_box[i][1]-15), result_names, self.text_color, font=font)
                     frame = np.array(frame)
 
         elif self.detectType == 'rotdet' and len(best_class) == len(best_class_boxR):
@@ -171,7 +171,7 @@ class DataNodeImage():
                     imageFA = Image.fromarray(np.uint8(imageFA))
                     draw = ImageDraw.Draw(imageFA)
                     font = ImageFont.truetype(self.font_location, 16)
-                    draw.text((best_class_boxR[i][0], best_class_boxR[i][1]), result_names, self.text_color, font=font)
+                    draw.text((best_class_boxR[i][0], best_class_boxR[i][1]-15), result_names, self.text_color, font=font)
                     imageFA = np.array(imageFA)
 
                 frame = imageFA
