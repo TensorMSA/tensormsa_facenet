@@ -138,7 +138,7 @@ class ClassifierImage():
                 classifier = OneVsRestClassifier(svm.SVC(kernel='linear', probability=True,
                                                          random_state=random_state))
                 #y_score = classifier.fit(emb_array, labels).decision_function(eval_emb_array)
-                _score = classifier.fit(emb_array, labels).decision_function(emb_array)
+                y_score = classifier.fit(emb_array, labels).decision_function(emb_array)
 
                 # Compute ROC curve and ROC area for each class
                 fpr = dict()
