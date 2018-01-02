@@ -1,0 +1,10 @@
+### TensorMSA_Facenet except source
+.idea/*
+*.pyc
+*/data/data_detect
+*/data/data_rotate
+*/data/data_rotdet
+*/pre_model/
+facenet_realtime/__pycache__/
+facenet_realtime/src/align/__pycache__
+facenet_realtime/src/common/__pycache__
