@@ -9,6 +9,7 @@ from imutils.face_utils import rect_to_bb
 import wget
 import dlib, bz2, cv2
 from scipy import misc
+import matplotlib.pyplot as plt
 
 class AlignDatasetRotation():
     def rotation_dataset(self, input_path, output_path, resize_flag = None):
@@ -61,13 +62,8 @@ class AlignDatasetRotation():
         for rect in face_boundaries:
             (x, y, w, h) = rect_to_bb(rect)
 
-            for (enum, face) in enumerate(face_boundaries):
-                x = face.left()
-                y = face.top()
-                w = face.right() - x
-                h = face.bottom() - y
-                if rectype == 'Y':
-                    cv2.rectangle(image, (x, y), (x + w, y + h), self.box_color, 1)
+            if rectype == 'Y':
+                cv2.rectangle(image, (x, y), (x + w, y + h), self.box_color, 1)
 
             faceAligned.append(fa.align(image, gray, rect))
             best_class_boxR.append([x, y, x + w, y + h])
