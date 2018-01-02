@@ -19,6 +19,7 @@ from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw
 import matplotlib.pyplot as plt
+import datetime
 
 class DataNodeImage():
     def realtime(self):
@@ -187,6 +188,7 @@ class DataNodeImage():
     def facenet_capture(self, sess):
         testCnt = 0
         video_capture = cv2.VideoCapture(0)
+        pretime = '99'
         while True:
             ret, frame = video_capture.read()
             if self.evalType == 'test':
@@ -199,7 +201,12 @@ class DataNodeImage():
             frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)  # resize frame (optional)
             frameArr = [frame]
 
-            pred, frame = self.getpredict(sess, frameArr)
+            now = datetime.datetime.now()
+            nowtime = now.strftime('%S')
+            if pretime != nowtime:
+                pretime = nowtime
+
+                pred, frame = self.getpredict(sess, frameArr)
 
             if self.evalType == 'real':
                 frame = cv2.resize(frame, (0, 0), fx=1, fy=1)
