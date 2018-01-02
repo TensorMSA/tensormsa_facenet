@@ -18,6 +18,7 @@ from facenet_realtime.src.align.align_dataset_rotation import AlignDatasetRotati
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw
+import matplotlib.pyplot as plt
 
 class DataNodeImage():
     def realtime(self):
@@ -28,8 +29,8 @@ class DataNodeImage():
         # self.realtime_run(self.model_name_detect, 'detect', 'test')
         # self.realtime_run(self.model_name_rotdet, 'rotdet', 'test')
 
-        # self.realtime_run(self.model_name_detect, 'detect', 'real')
-        self.realtime_run(self.model_name_rotdet, 'rotdet', 'real')
+        self.realtime_run(self.model_name_detect, 'detect', 'real')
+        # self.realtime_run(self.model_name_rotdet, 'rotdet', 'real')
 
     def realtime_run(self, modelName, detectType=None, evalType=None):
         '''
@@ -106,7 +107,6 @@ class DataNodeImage():
 
             if nrof_faces > 0:
                 det = bounding_boxes[:, 0:4]
-                img_size = np.asarray(frame.shape)[0:2]
 
                 cropped = []
                 scaled = []
@@ -125,18 +125,21 @@ class DataNodeImage():
                     if bb[i][0] <= 0 or bb[i][1] <= 0 or bb[i][2] >= len(frame[0]) or bb[i][3] >= len(frame):
                         best_class.append(-1)
                         best_class_box.append([0,0,0,0])
+                        cropped.append(-1)
+                        scaled.append(-1)
+                        scaled_reshape.append(-1)
                         continue
 
                     cropped.append(frame[bb[i][1]:bb[i][3], bb[i][0]:bb[i][2], :])
-                    cropped[0] = facenet.flip(cropped[0], False)
+                    cropped[i] = facenet.flip(cropped[i], False)
                     scaled.append(
-                        misc.imresize(cropped[0], (self.out_image_size, self.out_image_size), interp='bilinear'))
-                    scaled[0] = cv2.resize(scaled[0], (self.image_size, self.image_size),
+                        misc.imresize(cropped[i], (self.out_image_size, self.out_image_size), interp='bilinear'))
+                    scaled[i] = cv2.resize(scaled[i], (self.image_size, self.image_size),
                                            interpolation=cv2.INTER_CUBIC)
 
-                    scaled[0] = facenet.prewhiten(scaled[0])
-                    scaled_reshape.append(scaled[0].reshape(-1, self.image_size, self.image_size, 3))
-                    feed_dict = {self.images_placeholder: scaled_reshape[0], self.phase_train_placeholder: False}
+                    scaled[i] = facenet.prewhiten(scaled[i])
+                    scaled_reshape.append(scaled[i].reshape(-1, self.image_size, self.image_size, 3))
+                    feed_dict = {self.images_placeholder: scaled_reshape[i], self.phase_train_placeholder: False}
                     emb_array[0, :] = sess.run(self.embeddings, feed_dict=feed_dict)
                     predictions = self.model.predict_proba(emb_array)
                     best_class_indices = np.argmax(predictions, axis=1)
@@ -144,7 +147,6 @@ class DataNodeImage():
                     best_class_box.append([bb[i][0],bb[i][1],bb[i][2],bb[i][3]])
                     cv2.rectangle(frame, (best_class_box[i][0], best_class_box[i][1]),
                                   (best_class_box[i][2], best_class_box[i][3]), self.box_color, 1)
-
             else:
                 best_class.append(-2)
 
@@ -161,6 +163,7 @@ class DataNodeImage():
                     font = ImageFont.truetype(self.font_location, 16)
                     draw.text((best_class_box[i][0], best_class_box[i][1]-15), result_names, self.text_color, font=font)
                     frame = np.array(frame)
+                    i += 1
 
         elif self.detectType == 'rotdet' and len(best_class) == len(best_class_boxR):
             for bc in best_class:
@@ -173,6 +176,7 @@ class DataNodeImage():
                     font = ImageFont.truetype(self.font_location, 16)
                     draw.text((best_class_boxR[i][0], best_class_boxR[i][1]-15), result_names, self.text_color, font=font)
                     imageFA = np.array(imageFA)
+                    i += 1
 
                 frame = imageFA
 
@@ -198,11 +202,12 @@ class DataNodeImage():
             pred, frame = self.getpredict(sess, frameArr)
 
             if self.evalType == 'real':
+                frame = cv2.resize(frame, (0, 0), fx=1, fy=1)
                 cv2.imshow('Video', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
             elif self.evalType == 'test':
-                import matplotlib.pyplot as plt
+                # import matplotlib.pyplot as plt
                 plt.imshow(frame)
                 plt.show()
 
