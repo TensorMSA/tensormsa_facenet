@@ -33,12 +33,13 @@ class AlignDatasetRotation():
                 if not os.path.exists(output_filename):
                     image = [cv2.imread(input_path+'/'+dirList+'/'+img)]
 
-                    max_size = max(image[0].shape)
-
-                    if (self.image_resize < max_size and resize_flag == True):
-                        image[0] = misc.imresize(image[0], (self.image_resize / max_size))
-
                     try:
+                        max_size = max(image[0].shape)
+
+                        if (self.image_resize < max_size and resize_flag == True):
+                            image[0] = misc.imresize(image[0], (self.image_resize / max_size))
+
+
                         image, _, _ = self.face_rotation(image[0], predictor, detector)
                         for faArr in image:
                             cv2.imwrite(output_filename, faArr)
