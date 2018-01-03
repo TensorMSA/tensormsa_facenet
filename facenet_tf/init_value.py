@@ -15,7 +15,7 @@ class init_value():
         self.input_dir   = self.project_dir + 'data/train_data/'
         self.output_dir  = self.project_dir + 'data/detect_data/'
         self.random_order = False  # random.shuffle(dataset)
-        self.detect_multiple_faces = True
+        self.detect_multiple_faces = False
 
         # Classifier
         self.model_path = self.project_dir + 'pre_model/'
