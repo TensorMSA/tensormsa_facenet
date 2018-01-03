@@ -27,7 +27,7 @@ class init_value():
         self.data_dir = self.output_dir
         self.mode = 'TRAIN'
         self.seed = 666
-        self.batch_size = 1000
+        self.batch_size = 90
 
         # facenet_run
         self.debug = 'N' # 이미지 Log를 볼때 사용한다.
@@ -35,6 +35,9 @@ class init_value():
         self.font_location = self.project_dir + 'font/ttf/NanumBarunGothic.ttf'
         self.box_color = (120, 160, 230)
         self.text_color = (0, 255, 0)
+        self.viewImageSizeX =3
+        self.viewImageSizeY =3
+
 
 
 

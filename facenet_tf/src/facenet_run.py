@@ -67,7 +67,7 @@ class DataNodeImage():
                         ret, frame = video_capture.read()
                         pred, frame = self.getpredict(sess, frame)
 
-                        frame = cv2.resize(frame, (0, 0), fx=1, fy=1)
+                        frame = cv2.resize(frame, (0, 0), fx=self.viewImageSizeX, fy=self.viewImageSizeY)
                         cv2.imshow('Video', frame)
                         if cv2.waitKey(1) & 0xFF == ord('q'):
                             break
@@ -115,6 +115,5 @@ class DataNodeImage():
         return _, frame
 
 if __name__ == '__main__':
-    # object detect
-    DataNodeImage().realtime_run('test')
+    DataNodeImage().realtime_run('real')
 
