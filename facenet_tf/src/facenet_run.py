@@ -61,6 +61,7 @@ class DataNodeImage():
                     plt.imshow(frame)
                     plt.show()
                 else:
+                    self.pretime = '99' # 1 second save
                     video_capture = cv2.VideoCapture(0)
 
                     while True:
@@ -76,6 +77,8 @@ class DataNodeImage():
                     cv2.destroyAllWindows()
 
     def getpredict(self, sess, frame):
+        saveframe = frame
+        frame = cv2.resize(frame, (0, 0), fx=self.readImageSizeX, fy=self.readImageSizeY)
         img_size = np.asarray(frame.shape)[0:2]
         bounding_boxes, _ = detect_face.detect_face(frame, self.minsize, self.pnet, self.rnet, self.onet, self.threshold, self.factor)
 
@@ -103,16 +106,38 @@ class DataNodeImage():
                 for i in range(len(best_class_indices)):
                     print('%4d  %s: %.3f' % (i, self.class_names[best_class_indices[i]], best_class_probabilities[i]))
 
-            cv2.rectangle(frame, (bb[0], bb[1]),(bb[2], bb[3]), self.box_color, 1)
-
             frame = Image.fromarray(np.uint8(frame))
             draw = ImageDraw.Draw(frame)
             font = ImageFont.truetype(self.font_location, 16)
             result_names = self.class_names[best_class_indices[0]]+'('+str(best_class_probabilities[0])[:5]+')'
+
+            if len(bounding_boxes) == 1:
+                self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
+
             draw.text((bb[0], bb[1]-15), result_names, self.text_color, font=font)
             frame = np.array(frame)
 
+            cv2.rectangle(frame, (bb[0], bb[1]), (bb[2], bb[3]), self.box_color, 1)
+
         return _, frame
+
+    def save_image(self, frame, result_names, result_percent):
+        now = datetime.datetime.now()
+        nowtime = now.strftime('%S')
+        folder = self.save_dir+result_names.replace(' ', '_')+'/'
+        filename = result_names+result_percent
+
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        if nowtime != self.pretime:
+            self.pretime = nowtime
+            if result_names.find('Unknown') == -1:
+                # misc.imsave(folder+filename+'.png', frame)
+                cv2.imwrite(folder+filename+'.png', frame)
+            else:
+                filename = str(len(os.listdir(folder)))
+                # misc.imsave(folder + filename + '.png', frame)
+                cv2.imwrite(folder + filename + '.png', frame)
 
 if __name__ == '__main__':
     DataNodeImage().realtime_run('real')

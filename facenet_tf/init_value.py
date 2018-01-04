@@ -14,6 +14,7 @@ class init_value():
         # Align
         self.input_dir   = self.project_dir + 'data/train_data/'
         self.output_dir  = self.project_dir + 'data/detect_data/'
+        self.save_dir    = self.project_dir + 'data/save_data/'
         self.random_order = False  # random.shuffle(dataset)
         self.detect_multiple_faces = False
 
@@ -35,8 +36,10 @@ class init_value():
         self.font_location = self.project_dir + 'font/ttf/NanumBarunGothic.ttf'
         self.box_color = (120, 160, 230)
         self.text_color = (0, 255, 0)
-        self.viewImageSizeX =3
-        self.viewImageSizeY =3
+        self.readImageSizeX = 0.7
+        self.readImageSizeY = 0.7
+        self.viewImageSizeX =2
+        self.viewImageSizeY =2
 
 
 
