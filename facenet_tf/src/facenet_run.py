@@ -112,7 +112,7 @@ class DataNodeImage():
             result_names = self.class_names[best_class_indices[0]]+'('+str(best_class_probabilities[0])[:5]+')'
 
             if len(bounding_boxes) == 1:
-                self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
+                self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5], bb)
 
             draw.text((bb[0], bb[1]-15), result_names, self.text_color, font=font)
             frame = np.array(frame)
@@ -121,24 +121,28 @@ class DataNodeImage():
 
         return _, frame
 
-    def save_image(self, frame, result_names, result_percent):
+    def save_image(self, frame, result_names, result_percent, bb):
         now = datetime.datetime.now()
         nowtime = now.strftime('%Y%m%d%H%M%S')
-        folder = self.save_dir+result_names.replace(' ', '_')+'/'
-        filename = result_names+result_percent
-
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-
-        if nowtime != self.pretime:
-            self.pretime = nowtime
+        # print(bb[2] - bb[0])
+        if nowtime != self.pretime and bb[2] - bb[0] > 40 and bb[2] - bb[0] < 110:
+            folder = self.save_dir + result_names.replace(' ', '_') + '/'
+            filename = result_names + result_percent
+            # print(bb)
             if result_names.find('Unknown') == -1:
                 # misc.imsave(folder+filename+'.png', frame)
+                if not os.path.exists(folder):
+                    os.makedirs(folder)
                 cv2.imwrite(folder+filename+'.png', frame)
+                self.pretime = nowtime
             else:
-                filename = str(nowtime)
-                # misc.imsave(folder + filename + '.png', frame)
-                cv2.imwrite(folder + filename + '.png', frame)
+                if int(nowtime) - int(self.pretime) > 1:
+                    filename = str(nowtime)
+                    # misc.imsave(folder + filename + '.png', frame)
+                    if not os.path.exists(folder):
+                        os.makedirs(folder)
+                    cv2.imwrite(folder + filename + '.png', frame)
+                    self.pretime = nowtime
 
 if __name__ == '__main__':
     DataNodeImage().realtime_run('real')
