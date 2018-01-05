@@ -27,7 +27,7 @@ def download_file_from_google_drive(URL, destination):
 
     save_response_content(response, destination)
 
-def get_pre_model_path(pre_model_url, pre_model_zip, pre_model_path, pre_model_name):
+def get_pre_model_path(pre_model_url, pre_model_zip, pre_model_path):
     if not os.path.exists(pre_model_path):
         os.makedirs(pre_model_path)
 
@@ -37,7 +37,7 @@ def get_pre_model_path(pre_model_url, pre_model_zip, pre_model_path, pre_model_n
         except:
             print("Error : facenet model down.")
 
-    if os.path.isfile(pre_model_name) == False:
+    if os.path.isfile(pre_model_zip) == False:
         fantasy_zip = zipfile.ZipFile(pre_model_zip)
         fantasy_zip.extractall(pre_model_path)
         fantasy_zip.close()

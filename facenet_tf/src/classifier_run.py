@@ -9,16 +9,20 @@ class align_init():
 
 class Facenet_run():
     def run(self):
-        args = align_init()
+        self = align_init()
 
         # object detect
-        align_main(args)
+        align_main(self)
 
         # get pre Model Path
-        utils.get_pre_model_path(args.pre_model_url, args.pre_model_zip, args.model_path, args.model)
+
+        pre_model_url = 'https://drive.google.com/uc?id=0B5MzpY9kBtDVZ2RpVDYwWmxoSUk&export=download'
+        pre_model_zip = self.project_dir + 'pre_model/20170512-110547.zip'
+
+        utils.get_pre_model_path(pre_model_url, pre_model_zip, self.model_dir)
 
         # # classifier Train
-        classifier_main(args)
+        classifier_main(self)
 
 if __name__ == '__main__':
     Facenet_run().run()

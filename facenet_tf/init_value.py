@@ -19,11 +19,9 @@ class init_value():
         self.detect_multiple_faces = False
 
         # Classifier
-        self.model_path = self.project_dir + 'pre_model/'
-        self.pre_model_url = 'https://drive.google.com/uc?id=0B5MzpY9kBtDVZ2RpVDYwWmxoSUk&export=download'
-        self.pre_model_zip = self.project_dir + 'pre_model/20170512-110547.zip'
-        self.model = self.project_dir + 'pre_model/20170512-110547/20170512-110547.pb'
-        self.classifier_filename = self.project_dir + 'pre_model/my_classifier_detect.pkl'
+        self.model_dir = self.project_dir + 'pre_model/'
+        self.model = self.model_dir + '20170512-110547/20170512-110547.pb'
+        self.classifier_filename = self.model_dir + 'my_classifier_detect.pkl'
         self.use_split_dataset = False
         self.data_dir = self.output_dir
         self.mode = 'TRAIN'
