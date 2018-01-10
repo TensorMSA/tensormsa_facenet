@@ -35,12 +35,12 @@ import tensorflow as tf
 import numpy as np
 import importlib
 import argparse
+
 # import facenet
 # import lfw
 # Mrege --->
 import facenet_tf.src.common.facenet as facenet
 import facenet_tf.src.common.lfw as lfw
-from facenet_tf import init_value
 
 import h5py
 import tensorflow.contrib.slim as slim
@@ -53,10 +53,14 @@ def main(args):
     network = importlib.import_module(args.model_def)
 
     subdir = datetime.strftime(datetime.now(), '%Y%m%d-%H%M%S')
-    log_dir = args.logs_base_dir # os.path.join(os.path.expanduser(args.logs_base_dir), subdir)
+    # log_dir = os.path.join(os.path.expanduser(args.logs_base_dir), subdir)
+    # Mrege --->
+    log_dir = args.logs_base_dir
     if not os.path.isdir(log_dir):  # Create the log directory if it doesn't exist
         os.makedirs(log_dir)
-    model_dir = args.models_base_dir # os.path.join(os.path.expanduser(args.models_base_dir), subdir)
+    # model_dir = os.path.join(os.path.expanduser(args.models_base_dir), subdir)
+    # Mrege --->
+    model_dir = args.models_base_dir
     if not os.path.isdir(model_dir):  # Create the model directory if it doesn't exist
         os.makedirs(model_dir)
 
@@ -445,12 +449,7 @@ def parse_arguments(argv):
     parser.add_argument('--lfw_nrof_folds', type=int,
         help='Number of folds to use for cross validation. Mainly used for testing.', default=10)
     return parser.parse_args(argv)
-
-# Mrege --->
-class Facenet_run():
-    def run(self):
-        init_value.init_value.init(self)
-        main(self)
+  
 
 if __name__ == '__main__':
-    Facenet_run().run()
+    main(parse_arguments(sys.argv[1:]))
