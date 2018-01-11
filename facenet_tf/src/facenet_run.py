@@ -116,9 +116,6 @@ class DataNodeImage():
         best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
 
         try:
-            if self.debug == "Y":
-                print(self.findlist)
-
             viewFlag = 'Y'
             for fcnt in range(len(self.findlist)):
                 if self.findlist[fcnt] == '':
@@ -127,9 +124,10 @@ class DataNodeImage():
                     break
 
                 if self.findlist[fcnt] != self.class_names[best_class_indices[i]]:
-                    if self.class_names[best_class_indices[i]].lower().find('unknown') > -1:
+                    if self.class_names[best_class_indices[i]].lower().find('unknown') == -1:
+                        print(self.findlist)
                         print('Failed : '+self.class_names[best_class_indices[i]])
-                    print('Reset : UnKown.')
+                    # print('Reset : UnKown.')
                     self.reset_list(self.findlist)
                     viewFlag = 'N'
 
