@@ -38,7 +38,7 @@ class init_value():
         self.batch_size = 90
 
         # facenet_run
-        self.debug = 'N' # 이미지 Log를 볼때 사용한다.
+        self.debug = 'Y' # 이미지 Log를 볼때 사용한다.
         self.eval_dir = self.project_dir + 'data/eval_data/'
         self.font_location = self.project_dir + 'font/ttf/NanumBarunGothic.ttf'
         self.box_color = (120, 160, 230)
@@ -47,6 +47,8 @@ class init_value():
         self.readImageSizeY = 0.7
         self.viewImageSizeX =3
         self.viewImageSizeY =3
+        self.boxes_size = [40, 110]
+        self.findlist = ['','','','','']
 
         # feature train
         self.model_def = 'models.inception_resnet_v1'

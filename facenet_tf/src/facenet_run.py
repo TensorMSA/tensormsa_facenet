@@ -82,6 +82,7 @@ class DataNodeImage():
         img_size = np.asarray(frame.shape)[0:2]
         bounding_boxes, _ = detect_face.detect_face(frame, self.minsize, self.pnet, self.rnet, self.onet, self.threshold, self.factor)
 
+        boxes = []
         for i in range(len(bounding_boxes)):
             det = np.squeeze(bounding_boxes[i, 0:4])
             bb = np.zeros(4, dtype=np.int32)
@@ -89,48 +90,76 @@ class DataNodeImage():
             bb[1] = np.maximum(det[1] - self.margin / 2, 0)
             bb[2] = np.minimum(det[2] + self.margin / 2, img_size[1])
             bb[3] = np.minimum(det[3] + self.margin / 2, img_size[0])
-            cropped = frame[bb[1]:bb[3], bb[0]:bb[2], :]
-            aligned = misc.imresize(cropped, (self.image_size, self.image_size), interp='bilinear')
-            prewhitened = facenet.prewhiten(aligned)
-            prewhitened_reshape = prewhitened.reshape(-1, self.image_size, self.image_size, 3)
 
-            # Run forward pass to calculate embeddings
-            feed_dict = {self.images_placeholder: prewhitened_reshape, self.phase_train_placeholder: False}
-            emb = sess.run(self.embeddings, feed_dict=feed_dict)
+            if bb[2] - bb[0] > self.boxes_size[0] and bb[2] - bb[0] < self.boxes_size[1]:
+                boxes.append(bb)
 
-            predictions = self.model.predict_proba(emb)
-            best_class_indices = np.argmax(predictions, axis=1)
-            best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
+        if len(boxes) == 0 or len(boxes) > 1:
+            # if len(boxes) == 0:
+            #     print('Reset : detect 0.')
+            if len(boxes) > 1:
+                print('Reset : More than one person can not recognize.')
+            self.reset_list(self.findlist)
+            return _, frame
 
+        cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
+        aligned = misc.imresize(cropped, (self.image_size, self.image_size), interp='bilinear')
+        prewhitened = facenet.prewhiten(aligned)
+        prewhitened_reshape = prewhitened.reshape(-1, self.image_size, self.image_size, 3)
+
+        # Run forward pass to calculate embeddings
+        feed_dict = {self.images_placeholder: prewhitened_reshape, self.phase_train_placeholder: False}
+        emb = sess.run(self.embeddings, feed_dict=feed_dict)
+
+        predictions = self.model.predict_proba(emb)
+        best_class_indices = np.argmax(predictions, axis=1)
+        best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
+
+        try:
             if self.debug == "Y":
-                for i in range(len(best_class_indices)):
-                    print('%4d  %s: %.3f' % (i, self.class_names[best_class_indices[i]], best_class_probabilities[i]))
+                print(self.findlist)
 
+            viewFlag = 'Y'
+            for fcnt in range(len(self.findlist)):
+                if self.findlist[fcnt] == '':
+                    self.findlist[fcnt] = self.class_names[best_class_indices[i]]
+                    viewFlag = 'N'
+                    break
+
+                if self.findlist[fcnt] != self.class_names[best_class_indices[i]]:
+                    if self.class_names[best_class_indices[i]].lower().find('unknown') > -1:
+                        print('Failed : '+self.class_names[best_class_indices[i]])
+                    print('Reset : UnKown.')
+                    self.reset_list(self.findlist)
+                    viewFlag = 'N'
+
+            self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5], boxes[0])
+        except Exception as e:
+            viewFlag = 'N'
+            print(e)
+
+        if viewFlag == 'Y':
             frame = Image.fromarray(np.uint8(frame))
             draw = ImageDraw.Draw(frame)
             font = ImageFont.truetype(self.font_location, 16)
             result_names = self.class_names[best_class_indices[0]]+'('+str(best_class_probabilities[0])[:5]+')'
 
-            if len(bounding_boxes) == 1:
-                self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5], bb)
-
-            draw.text((bb[0], bb[1]-15), result_names, self.text_color, font=font)
+            draw.text((boxes[0][0], boxes[0][1]-15), result_names, self.text_color, font=font)
             frame = np.array(frame)
 
-            cv2.rectangle(frame, (bb[0], bb[1]), (bb[2], bb[3]), self.box_color, 1)
+        cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
+
 
         return _, frame
 
     def save_image(self, frame, result_names, result_percent, bb):
         now = datetime.datetime.now()
         nowtime = now.strftime('%Y%m%d%H%M%S')
-        # print(bb[2] - bb[0])
-        if nowtime != self.pretime and bb[2] - bb[0] > 40 and bb[2] - bb[0] < 110:
+
+        if nowtime != self.pretime:
             folder = self.save_dir + result_names.replace(' ', '_') + '/'
             filename = result_names + result_percent
-            # print(bb)
             if result_names.find('Unknown') == -1:
-                # misc.imsave(folder+filename+'.png', frame)
                 if not os.path.exists(folder):
                     os.makedirs(folder)
                 cv2.imwrite(folder+filename+'.png', frame)
@@ -138,11 +167,14 @@ class DataNodeImage():
             else:
                 if int(nowtime) - int(self.pretime) > 1:
                     filename = str(nowtime)
-                    # misc.imsave(folder + filename + '.png', frame)
                     if not os.path.exists(folder):
                         os.makedirs(folder)
                     cv2.imwrite(folder + filename + '.png', frame)
                     self.pretime = nowtime
+
+    def reset_list(self, list):
+        for i in range(len(list)):
+            list[i] = ''
 
 if __name__ == '__main__':
     DataNodeImage().realtime_run('real')
