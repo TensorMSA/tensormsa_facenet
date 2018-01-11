@@ -140,13 +140,13 @@ class DataNodeImage():
                     # print('Reset : UnKown.')
                     self.reset_list(self.findlist)
                     viewFlag = 'N'
-
-            self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5], boxes[0])
         except Exception as e:
             viewFlag = 'N'
             print(e)
 
         if viewFlag == 'Y':
+            self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5],
+                            boxes[0])
             frame = Image.fromarray(np.uint8(frame))
             draw = ImageDraw.Draw(frame)
             font = ImageFont.truetype(self.font_location, 16)
