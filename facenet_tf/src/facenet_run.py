@@ -143,10 +143,10 @@ class DataNodeImage():
         except Exception as e:
             viewFlag = 'N'
             print(e)
-
+        self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5],
+                        boxes[0])
         if viewFlag == 'Y':
-            self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5],
-                            boxes[0])
+
             frame = Image.fromarray(np.uint8(frame))
             draw = ImageDraw.Draw(frame)
             font = ImageFont.truetype(self.font_location, 16)
@@ -173,7 +173,7 @@ class DataNodeImage():
                 cv2.imwrite(folder+filename+'.png', frame)
                 self.pretime = nowtime
             else:
-                if int(nowtime) - int(self.pretime) > 1:
+                if int(nowtime) - int(self.pretime) >= 1:
                     filename = str(nowtime)
                     if not os.path.exists(folder):
                         os.makedirs(folder)

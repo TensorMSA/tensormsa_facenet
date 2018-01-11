@@ -50,7 +50,7 @@ class init_value():
         self.readImageSizeY = 1
         self.viewImageSizeX =3
         self.viewImageSizeY =3
-        self.boxes_size = [90, 170]
+        self.boxes_size = [80, 170]
         self.findlist = ['','','','','']
 
         # feature train
