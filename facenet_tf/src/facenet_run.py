@@ -19,6 +19,8 @@ from PIL import ImageFont
 from PIL import ImageDraw
 import matplotlib.pyplot as plt
 import datetime
+import logging
+
 
 class DataNodeImage():
     def realtime_run(self, runtype = 'real'):
@@ -45,6 +47,13 @@ class DataNodeImage():
                     (self.model, self.class_names) = pickle.load(infile)
                     print('load classifier file-> %s' % classifier_filename_exp)
                     print('')
+
+                self.logger = logging.getLogger('myapp')
+                hdlr = logging.FileHandler(self.log_dir + '/myface.log')
+                formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+                hdlr.setFormatter(formatter)
+                self.logger.addHandler(hdlr)
+                self.logger.setLevel(logging.WARNING)
 
                 if runtype == 'test':
                     test_data_files = []
@@ -119,14 +128,15 @@ class DataNodeImage():
             viewFlag = 'Y'
             for fcnt in range(len(self.findlist)):
                 if self.findlist[fcnt] == '':
-                    self.findlist[fcnt] = self.class_names[best_class_indices[i]]
+                    self.findlist[fcnt] = self.class_names[best_class_indices[0]]
                     viewFlag = 'N'
                     break
 
-                if self.findlist[fcnt] != self.class_names[best_class_indices[i]]:
-                    if self.class_names[best_class_indices[i]].lower().find('unknown') == -1:
-                        print(self.findlist)
-                        print('Failed : '+self.class_names[best_class_indices[i]])
+                if self.findlist[fcnt] != self.class_names[best_class_indices[0]]:
+                    if self.findlist[fcnt].lower().find('unknown') == -1:
+                        if self.class_names[best_class_indices[0]].lower().find('unknown') == -1:
+                            self.logger.error(self.findlist)
+                            self.logger.error('Failed : '+self.class_names[best_class_indices[0]]+'('+str(best_class_probabilities[0])[:5]+')')
                     # print('Reset : UnKown.')
                     self.reset_list(self.findlist)
                     viewFlag = 'N'

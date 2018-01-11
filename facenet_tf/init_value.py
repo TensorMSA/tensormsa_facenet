@@ -41,13 +41,16 @@ class init_value():
         self.debug = 'N' # 이미지 Log를 볼때 사용한다.
         self.eval_dir = self.project_dir + 'data/eval_data/'
         self.font_location = self.project_dir + 'font/ttf/NanumBarunGothic.ttf'
+        self.log_dir = '/hoya_src_root/log_data/'
+        if not os.path.exists(self.log_dir):
+            os.makedirs(self.log_dir)
         self.box_color = (120, 160, 230)
         self.text_color = (0, 255, 0)
-        self.readImageSizeX = 0.7
-        self.readImageSizeY = 0.7
+        self.readImageSizeX = 1
+        self.readImageSizeY = 1
         self.viewImageSizeX =3
         self.viewImageSizeY =3
-        self.boxes_size = [40, 110]
+        self.boxes_size = [90, 170]
         self.findlist = ['','','','','']
 
         # feature train
