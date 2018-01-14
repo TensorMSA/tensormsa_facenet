@@ -59,9 +59,9 @@ class init_value():
         self.models_base_dir=self.model_dir
         self.gpu_memory_fraction=1.0
         self.data_dir= self.output_dir    # '~/datasets/casia/casia_maxpy_mtcnnalign_182_160'
-        self.max_nrof_epochs=500
+        self.max_nrof_epochs=1
         self.batch_size=90
-        self.epoch_size=1000
+        self.epoch_size=1
         self.embedding_size=128
         self.keep_probability=1.0
         self.weight_decay=0.0
@@ -78,7 +78,7 @@ class init_value():
         self.filter_filename=''
         self.filter_percentile=100.0
         self.filter_min_nrof_images_per_class=0
-        self.pretrained_model= None # self.model
+        self.pretrained_model= self.model
 
         # Parameters for validation on LFW
         self.lfw_pairs='data/pairs.txt'
@@ -91,8 +91,6 @@ class init_value():
         self.random_rotate = True
         self.random_crop = True
         self.log_histograms = False
-
-
 
 
 
