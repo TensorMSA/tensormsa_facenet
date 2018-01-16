@@ -104,8 +104,6 @@ class DataNodeImage():
                 boxes.append(bb)
 
         if len(boxes) == 0 or len(boxes) > 1:
-            # if len(boxes) == 0:
-            #     print('Reset : detect 0.')
             if len(boxes) > 1:
                 print('Reset : More than one person can not recognize.')
             self.reset_list(self.findlist)
@@ -133,34 +131,52 @@ class DataNodeImage():
                     break
 
                 if self.findlist[fcnt] != self.class_names[best_class_indices[0]]:
-                    if self.findlist[fcnt].lower().find('unknown') == -1:
-                        if self.class_names[best_class_indices[0]].lower().find('unknown') == -1:
+                    if self.class_names[best_class_indices[0]].lower().find('unknown') == -1:
+                        if self.findlist[fcnt].lower().find('unknown') == -1:
                             self.logger.error(self.findlist)
                             self.logger.error('Failed : '+self.class_names[best_class_indices[0]]+'('+str(best_class_probabilities[0])[:5]+')')
-                    # print('Reset : UnKown.')
-                    self.reset_list(self.findlist)
-                    viewFlag = 'N'
+                        self.reset_list(self.findlist)
+                        viewFlag = 'N'
         except Exception as e:
             viewFlag = 'N'
             print(e)
-        self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5],
-                        boxes[0])
+        # print(self.findlist)
+        self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
+
         if viewFlag == 'Y':
+            # log
+            parray = []
+            for pcnt in range(len(predictions[0])):
+                if predictions[0][pcnt] < 0.01:
+                    continue
+                parray.append(str(predictions[0][pcnt])[:4]+'_'+self.class_names[pcnt])
+            parray.sort(reverse=True)
+            print(parray)
+
+            resultFlag = 'Y'
+            result_names = self.class_names[best_class_indices[0]] + '(' + str(best_class_probabilities[0])[:5] + ')'
+            if self.class_names[best_class_indices[0]].lower().find('unknown') > -1:
+                for rcnt in range(len(self.findlist)):
+                    if self.findlist[rcnt] == '':
+                        resultFlag = 'N'
+                        break
+
+                if resultFlag == 'Y':
+                    result_names = self.findlist[rcnt] + '(' + str(best_class_probabilities[0])[:5] + ')'
 
             frame = Image.fromarray(np.uint8(frame))
             draw = ImageDraw.Draw(frame)
             font = ImageFont.truetype(self.font_location, 16)
-            result_names = self.class_names[best_class_indices[0]]+'('+str(best_class_probabilities[0])[:5]+')'
+
 
             draw.text((boxes[0][0], boxes[0][1]-15), result_names, self.text_color, font=font)
             frame = np.array(frame)
 
         cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
 
-
         return _, frame
 
-    def save_image(self, frame, result_names, result_percent, bb):
+    def save_image(self, frame, result_names, result_percent):
         now = datetime.datetime.now()
         nowtime = now.strftime('%Y%m%d%H%M%S')
 
