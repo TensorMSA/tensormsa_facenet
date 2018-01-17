@@ -178,6 +178,23 @@ class DataNodeImage():
         return _, frame
 
     def save_image(self, frame, result_names, result_percent):
+        folder = self.save_dir + result_names.replace(' ', '_') + '/'
+        filename = result_names + result_percent
+        now = datetime.datetime.now()
+        nowtime = now.strftime('%Y%m%d%H%M%S')
+
+        if result_names.find('Unknown') == -1:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            cv2.imwrite(folder+filename+'.png', frame)
+        else:
+            filename = str(now) + '_'+ result_percent
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            cv2.imwrite(folder + filename + '.png', frame)
+
+    # 1 second save
+    def save_image_time(self, frame, result_names, result_percent):
         now = datetime.datetime.now()
         nowtime = now.strftime('%Y%m%d%H%M%S')
 
