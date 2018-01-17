@@ -86,6 +86,14 @@ class DataNodeImage():
                     cv2.destroyAllWindows()
 
     def getpredict(self, sess, frame):
+        min_box = round(frame.shape[1]/6)
+        stand_box = []
+        stand_box.append(round(frame.shape[1]/4))
+        stand_box.append(round(frame.shape[0]/5))
+        stand_box.append(round(frame.shape[1]/4)*3)
+        stand_box.append(round(frame.shape[0]/5)*4)
+        self.draw_border(frame, (stand_box[0], stand_box[1]), (stand_box[2], stand_box[3]), self.stand_box_color, 2, 10, 20)
+
         saveframe = frame
         frame = cv2.resize(frame, (0, 0), fx=self.readImageSizeX, fy=self.readImageSizeY)
         img_size = np.asarray(frame.shape)[0:2]
@@ -100,8 +108,17 @@ class DataNodeImage():
             bb[2] = np.minimum(det[2] + self.margin / 2, img_size[1])
             bb[3] = np.minimum(det[3] + self.margin / 2, img_size[0])
 
-            if bb[2] - bb[0] > self.boxes_size[0] and bb[2] - bb[0] < self.boxes_size[1]:
+            # if bb[2] - bb[0] > self.boxes_size[0] and bb[2] - bb[0] < self.boxes_size[1]:
+            #     boxes.append(bb)
+            if min_box > bb[2] - bb[0]:
+                text = 'Please, Come Closer.'
+                return _, self.draw_text(frame, text, stand_box)
+
+            if stand_box[0] < bb[0] and stand_box[2] > bb[2] and stand_box[1] < bb[1] and stand_box[3] > bb[3]:
                 boxes.append(bb)
+            else:
+                text = 'Please, Come inside the box.'
+                return _, self.draw_text(frame, text, stand_box)
 
         if len(boxes) == 0 or len(boxes) > 1:
             if len(boxes) > 1:
@@ -145,6 +162,10 @@ class DataNodeImage():
 
         if viewFlag == 'Y':
             self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
+            frame = Image.fromarray(np.uint8(frame))
+            draw = ImageDraw.Draw(frame)
+            font = ImageFont.truetype(self.font_location, 16)
+
             # log
             parray = []
             for pcnt in range(len(predictions[0])):
@@ -155,7 +176,8 @@ class DataNodeImage():
             print(parray)
 
             resultFlag = 'Y'
-            result_names = self.class_names[best_class_indices[0]] + '(' + str(best_class_probabilities[0])[:5] + ')'
+            result = self.class_names[best_class_indices[0]]
+            result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
             if self.class_names[best_class_indices[0]].lower().find('unknown') > -1:
                 for rcnt in range(len(self.findlist)):
                     if self.findlist[rcnt] == '':
@@ -163,14 +185,13 @@ class DataNodeImage():
                         break
 
                 if resultFlag == 'Y':
-                    result_names = self.findlist[rcnt] + '(' + str(best_class_probabilities[0])[:5] + ')'
-
-            frame = Image.fromarray(np.uint8(frame))
-            draw = ImageDraw.Draw(frame)
-            font = ImageFont.truetype(self.font_location, 16)
-
+                    result = self.findlist[rcnt]
+                    result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
 
             draw.text((boxes[0][0], boxes[0][1]-15), result_names, self.text_color, font=font)
+            font = ImageFont.truetype(self.font_location, 20)
+            result_names = result + ' has been verified'
+            draw.text((stand_box[0], stand_box[1] - 30), result_names, self.text_color, font=font)
             frame = np.array(frame)
 
         cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
@@ -192,6 +213,38 @@ class DataNodeImage():
             if not os.path.exists(folder):
                 os.makedirs(folder)
             cv2.imwrite(folder + filename + '.png', frame)
+
+    def draw_border(self, img, pt1, pt2, color, thickness, r, d):
+        x1, y1 = pt1
+        x2, y2 = pt2
+
+        # Top left
+        cv2.line(img, (x1 + r, y1), (x1 + r + d, y1), color, thickness)
+        cv2.line(img, (x1, y1 + r), (x1, y1 + r + d), color, thickness)
+        cv2.ellipse(img, (x1 + r, y1 + r), (r, r), 180, 0, 90, color, thickness)
+
+        # Top right
+        cv2.line(img, (x2 - r, y1), (x2 - r - d, y1), color, thickness)
+        cv2.line(img, (x2, y1 + r), (x2, y1 + r + d), color, thickness)
+        cv2.ellipse(img, (x2 - r, y1 + r), (r, r), 270, 0, 90, color, thickness)
+
+        # Bottom left
+        cv2.line(img, (x1 + r, y2), (x1 + r + d, y2), color, thickness)
+        cv2.line(img, (x1, y2 - r), (x1, y2 - r - d), color, thickness)
+        cv2.ellipse(img, (x1 + r, y2 - r), (r, r), 90, 0, 90, color, thickness)
+
+        # Bottom right
+        cv2.line(img, (x2 - r, y2), (x2 - r - d, y2), color, thickness)
+        cv2.line(img, (x2, y2 - r), (x2, y2 - r - d), color, thickness)
+        cv2.ellipse(img, (x2 - r, y2 - r), (r, r), 0, 0, 90, color, thickness)
+
+    def draw_text(self, frame, text, boxes):
+        frame = Image.fromarray(np.uint8(frame))
+        draw = ImageDraw.Draw(frame)
+        font = ImageFont.truetype(self.font_location, 32)
+        draw.text((boxes[0], boxes[1] - 30), text, self.alert_color, font=font)
+        frame = np.array(frame)
+        return frame
 
     # 1 second save
     def save_image_time(self, frame, result_names, result_percent):

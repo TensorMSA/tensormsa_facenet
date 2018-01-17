@@ -44,6 +44,8 @@ class init_value():
         self.log_dir = '/hoya_src_root/log_data/'
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)
+        self.stand_box_color = (255, 255, 255)
+        self.alert_color = (0, 0, 255)
         self.box_color = (120, 160, 230)
         self.text_color = (0, 255, 0)
         self.readImageSizeX = 1
