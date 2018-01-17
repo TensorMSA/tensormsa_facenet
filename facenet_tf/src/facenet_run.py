@@ -141,13 +141,14 @@ class DataNodeImage():
             viewFlag = 'N'
             print(e)
         # print(self.findlist)
-        self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
+
 
         if viewFlag == 'Y':
+            self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
             # log
             parray = []
             for pcnt in range(len(predictions[0])):
-                if predictions[0][pcnt] < 0.01:
+                if predictions[0][pcnt] < 0.05:
                     continue
                 parray.append(str(predictions[0][pcnt])[:4]+'_'+self.class_names[pcnt])
             parray.sort(reverse=True)
