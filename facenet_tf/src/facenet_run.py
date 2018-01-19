@@ -115,20 +115,21 @@ class DataNodeImage():
             # if bb[2] - bb[0] > self.boxes_size[0] and bb[2] - bb[0] < self.boxes_size[1]:
             #     boxes.append(bb)
             if min_box > bb[2] - bb[0]:
-                text = 'Please, Come Closer.'
+                text = '가까이 다가와 주세요.'
                 return _, self.draw_text(frame, text, stand_box)
 
             if stand_box[0] < bb[0] and stand_box[2] > bb[2] and stand_box[1] < bb[1] and stand_box[3] > bb[3]:
                 boxes.append(bb)
             else:
-                text = 'Please, Come inside the box.'
+                text = '박스 안으로 움직여 주세요.'
                 return _, self.draw_text(frame, text, stand_box)
 
         if len(boxes) == 0 or len(boxes) > 1:
             if len(boxes) > 1:
-                print('Reset : More than one person can not recognize.')
+                text = '한 명만 인식할 수 있습니다.'
+
             self.reset_list(self.findlist)
-            return _, frame
+            return _, self.draw_text(frame, text, stand_box)
 
         cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
         aligned = misc.imresize(cropped, (self.image_size, self.image_size), interp='bilinear')
@@ -162,7 +163,6 @@ class DataNodeImage():
             viewFlag = 'N'
             print(e)
         # print(self.findlist)
-
 
         if viewFlag == 'Y':
             self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
@@ -202,22 +202,6 @@ class DataNodeImage():
 
         return _, frame
 
-    def save_image(self, frame, result_names, result_percent):
-        folder = self.save_dir + result_names.replace(' ', '_') + '/'
-        filename = result_names + result_percent
-        now = datetime.datetime.now()
-        nowtime = now.strftime('%Y%m%d%H%M%S')
-
-        if result_names.find('Unknown') == -1:
-            if not os.path.exists(folder):
-                os.makedirs(folder)
-            cv2.imwrite(folder+filename+'.png', frame)
-        else:
-            filename = str(now) + '_'+ result_percent
-            if not os.path.exists(folder):
-                os.makedirs(folder)
-            cv2.imwrite(folder + filename + '.png', frame)
-
     def draw_border(self, img, pt1, pt2, color, thickness, r, d):
         x1, y1 = pt1
         x2, y2 = pt2
@@ -249,6 +233,22 @@ class DataNodeImage():
         draw.text((boxes[0], boxes[1] - 30), text, self.alert_color, font=font)
         frame = np.array(frame)
         return frame
+
+    def save_image(self, frame, result_names, result_percent):
+        folder = self.save_dir + result_names.replace(' ', '_') + '/'
+        filename = result_names + result_percent
+        now = datetime.datetime.now()
+        nowtime = now.strftime('%Y%m%d%H%M%S')
+
+        if result_names.find('Unknown') == -1:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            cv2.imwrite(folder+filename+'.png', frame)
+        else:
+            filename = str(now) + '_'+ result_percent
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            cv2.imwrite(folder + filename + '.png', frame)
 
     # 1 second save
     def save_image_time(self, frame, result_names, result_percent):
