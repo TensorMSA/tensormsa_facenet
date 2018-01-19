@@ -80,7 +80,7 @@ class DataNodeImage():
                         try:
                             pred, frame = self.getpredict(sess, frame)
                         except:
-                            print('detect fail.....')
+                            None
 
                         frame = cv2.resize(frame, (0, 0), fx=self.viewImageSizeX, fy=self.viewImageSizeY)
                         cv2.imshow('Video', frame)
