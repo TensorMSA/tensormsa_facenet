@@ -93,9 +93,9 @@ class DataNodeImage():
         min_box = round(frame.shape[1]/10)
         stand_box = []
         stand_box.append(round(frame.shape[1]/4))
-        stand_box.append(round(frame.shape[0]/5))
+        stand_box.append(round(frame.shape[0]/7))
         stand_box.append(round(frame.shape[1]/4)*3)
-        stand_box.append(round(frame.shape[0]/5)*4)
+        stand_box.append(round(frame.shape[0]/6)*4)
         self.draw_border(frame, (stand_box[0], stand_box[1]), (stand_box[2], stand_box[3]), self.stand_box_color, 2, 10, 20)
 
         saveframe = frame
