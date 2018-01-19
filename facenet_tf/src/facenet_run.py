@@ -75,6 +75,7 @@ class DataNodeImage():
 
                     while True:
                         ret, frame = video_capture.read()
+                        frame = cv2.flip( frame, 1 )
 
                         try:
                             pred, frame = self.getpredict(sess, frame)
