@@ -104,6 +104,7 @@ class DataNodeImage():
         img_size = np.asarray(frame.shape)[0:2]
         bounding_boxes, _ = detect_face.detect_face(frame, self.minsize, self.pnet, self.rnet, self.onet, self.threshold, self.factor)
 
+        msgType = 0
         boxes = []
         for i in range(len(bounding_boxes)):
             det = np.squeeze(bounding_boxes[i, 0:4])
@@ -116,21 +117,22 @@ class DataNodeImage():
             # if bb[2] - bb[0] > self.boxes_size[0] and bb[2] - bb[0] < self.boxes_size[1]:
             #     boxes.append(bb)
             if min_box > bb[2] - bb[0]:
-                text = '가까이 다가와 주세요.'
-                return _, self.draw_text(frame, text, stand_box)
+                msgType = 1 # text = '가까이 다가와 주세요.'
+                break
 
             if stand_box[0] < bb[0] and stand_box[2] > bb[2] and stand_box[1] < bb[1] and stand_box[3] > bb[3]:
                 boxes.append(bb)
             else:
-                text = '박스 안으로 움직여 주세요.'
-                return _, self.draw_text(frame, text, stand_box)
+                msgType = 2 # text = '박스 안으로 움직여 주세요.'
 
         if len(boxes) == 0 or len(boxes) > 1:
             if len(boxes) > 1:
-                text = '한 명만 인식할 수 있습니다.'
+                msgType = 3 # text = '한 명만 인식할 수 있습니다.'
 
             self.reset_list(self.findlist)
-            return _, self.draw_text(frame, text, stand_box)
+
+        if msgType != 0:
+            return _, self.draw_text(frame, self.set_msg(msgType), stand_box)
 
         cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
         aligned = misc.imresize(cropped, (self.image_size, self.image_size), interp='bilinear')
@@ -202,6 +204,16 @@ class DataNodeImage():
         cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
 
         return _, frame
+
+    def set_msg(self, msgType):
+        if msgType == 1:
+            text = '가까이 다가와 주세요.'
+        elif msgType == 2:
+            text = '박스 안으로 움직여 주세요.'
+        elif msgType == 3:
+            text = '한 명만 인식할 수 있습니다.'
+
+        return text
 
     def draw_border(self, img, pt1, pt2, color, thickness, r, d):
         x1, y1 = pt1
