@@ -194,7 +194,7 @@ class DataNodeImage():
 
             draw.text((boxes[0][0], boxes[0][1]-15), result_names, self.text_color, font=font)
             font = ImageFont.truetype(self.font_location, 20)
-            result_names = result + ' has been verified'
+            result_names = result + ' 님 인증 되었습니다.'
             draw.text((stand_box[0], stand_box[1] - 30), result_names, self.text_color, font=font)
             frame = np.array(frame)
 
