@@ -75,7 +75,11 @@ class DataNodeImage():
 
                     while True:
                         ret, frame = video_capture.read()
-                        pred, frame = self.getpredict(sess, frame)
+
+                        try:
+                            pred, frame = self.getpredict(sess, frame)
+                        except:
+                            print('detect fail.....')
 
                         frame = cv2.resize(frame, (0, 0), fx=self.viewImageSizeX, fy=self.viewImageSizeY)
                         cv2.imshow('Video', frame)
@@ -86,7 +90,7 @@ class DataNodeImage():
                     cv2.destroyAllWindows()
 
     def getpredict(self, sess, frame):
-        min_box = round(frame.shape[1]/6)
+        min_box = round(frame.shape[1]/10)
         stand_box = []
         stand_box.append(round(frame.shape[1]/4))
         stand_box.append(round(frame.shape[0]/5))
