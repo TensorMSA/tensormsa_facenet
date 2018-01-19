@@ -116,14 +116,13 @@ class DataNodeImage():
 
             # if bb[2] - bb[0] > self.boxes_size[0] and bb[2] - bb[0] < self.boxes_size[1]:
             #     boxes.append(bb)
-            if min_box > bb[2] - bb[0]:
+            if min_box > bb[2] - bb[0] and bb[2] - bb[0] > 0:
                 msgType = 1 # text = '가까이 다가와 주세요.'
-                break
 
-            if stand_box[0] < bb[0] and stand_box[2] > bb[2] and stand_box[1] < bb[1] and stand_box[3] > bb[3]:
-                boxes.append(bb)
-            else:
-                msgType = 2 # text = '박스 안으로 움직여 주세요.'
+            if msgType == 0 and stand_box[0] > bb[0] or stand_box[2] < bb[2] or stand_box[1] > bb[1] or stand_box[3] < bb[3]:
+                msgType = 2  # text = '박스 안으로 움직여 주세요.'
+
+            boxes.append(bb)
 
         if len(boxes) == 0 or len(boxes) > 1:
             if len(boxes) > 1:
