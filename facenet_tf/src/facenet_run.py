@@ -131,7 +131,9 @@ class DataNodeImage():
             self.reset_list(self.findlist)
 
         if msgType != 0:
-            return _, self.draw_text(frame, self.set_msg(msgType), stand_box)
+            frame = self.draw_text(frame, self.set_msg(msgType), stand_box)
+            # self.save_image(frame)
+            return _, frame
 
         cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
         aligned = misc.imresize(cropped, (self.image_size, self.image_size), interp='bilinear')
@@ -201,7 +203,7 @@ class DataNodeImage():
             frame = np.array(frame)
 
         cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
-
+        # self.save_image(frame, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
         return _, frame
 
     def set_msg(self, msgType):
@@ -246,13 +248,16 @@ class DataNodeImage():
         frame = np.array(frame)
         return frame
 
-    def save_image(self, frame, result_names, result_percent):
+    def save_image(self, frame, result_names=None, result_percent=None):
+        if result_names == None:
+            result_names = 'resultNone'
+            result_percent = '0'
         folder = self.save_dir + result_names.replace(' ', '_') + '/'
         filename = result_names + result_percent
         now = datetime.datetime.now()
         nowtime = now.strftime('%Y%m%d%H%M%S')
 
-        if result_names.find('Unknown') == -1:
+        if result_names.find('Unknown') == -1 and result_names != 'resultNone':
             if not os.path.exists(folder):
                 os.makedirs(folder)
             cv2.imwrite(folder+filename+'.png', frame)
