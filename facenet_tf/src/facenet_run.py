@@ -24,6 +24,7 @@ import logging
 
 class DataNodeImage():
     def realtime_run(self, runtype = 'real'):
+        self.runtype = runtype
         init_value.init_value.init(self)
 
         with tf.Graph().as_default():
@@ -55,7 +56,7 @@ class DataNodeImage():
                 self.logger.addHandler(hdlr)
                 self.logger.setLevel(logging.WARNING)
 
-                if runtype == 'test':
+                if self.runtype == 'test':
                     test_data_files = []
                     evaldirlist = sorted(os.listdir(self.eval_dir))
                     for evalpath in evaldirlist:
@@ -64,11 +65,12 @@ class DataNodeImage():
 
                         for evalfile in evalfile_list:
                             test_data_files.append(evalfile_path + '/' + evalfile)
-                            break
-                    frame = misc.imread(test_data_files[0])
-                    pred, frame = self.getpredict(sess, frame)
-                    plt.imshow(frame)
-                    plt.show()
+                            # break
+                    for test_file in test_data_files:
+                        frame = misc.imread(test_file)
+                        pred, frame = self.getpredict(sess, frame)
+                        plt.imshow(frame)
+                        plt.show()
                 else:
                     self.pretime = '99' # 1 second save
                     video_capture = cv2.VideoCapture(0)
@@ -77,10 +79,7 @@ class DataNodeImage():
                         ret, frame = video_capture.read()
                         frame = cv2.flip( frame, 1 )
 
-                        try:
-                            pred, frame = self.getpredict(sess, frame)
-                        except:
-                            None
+                        pred, frame = self.getpredict(sess, frame)
 
                         frame = cv2.resize(frame, (0, 0), fx=self.viewImageSizeX, fy=self.viewImageSizeY)
                         cv2.imshow('Video', frame)
@@ -130,7 +129,7 @@ class DataNodeImage():
 
             self.reset_list(self.findlist)
 
-        if msgType != 0:
+        if msgType != 0 and self.runtype != 'test':
             frame = self.draw_text(frame, self.set_msg(msgType), stand_box)
             # self.save_image(frame)
             return _, frame
@@ -168,7 +167,7 @@ class DataNodeImage():
             print(e)
         # print(self.findlist)
 
-        if viewFlag == 'Y':
+        if viewFlag == 'Y' or self.runtype == 'test':
             self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
             frame = Image.fromarray(np.uint8(frame))
             draw = ImageDraw.Draw(frame)
