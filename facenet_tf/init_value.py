@@ -59,7 +59,6 @@ class init_value():
         self.model_def = 'models.inception_resnet_v1'
         self.logs_base_dir=self.model_dir
         self.models_base_dir=self.model_dir
-        self.gpu_memory_fraction=1.0
         self.data_dir= self.output_dir    # '~/datasets/casia/casia_maxpy_mtcnnalign_182_160'
         self.max_nrof_epochs=1
         self.batch_size=90
