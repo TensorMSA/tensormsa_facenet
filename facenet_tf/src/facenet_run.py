@@ -151,6 +151,7 @@ class DataNodeImage():
 
         if len(boxes) == 0:
             self.reset_list(self.findlist)
+            return frame
         elif len(boxes) > 1:
             msgType = 3 # text = '한 명만 인식할 수 있습니다.'
             for box in boxes:
