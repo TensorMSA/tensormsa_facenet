@@ -147,11 +147,13 @@ class DataNodeImage():
 
             boxes.append(bb)
 
-        if len(boxes) == 0 or len(boxes) > 1:
-            if len(boxes) > 1:
-                msgType = 3 # text = '한 명만 인식할 수 있습니다.'
-
+        if len(boxes) == 0:
             self.reset_list(self.findlist)
+        elif len(boxes) > 1:
+            msgType = 3 # text = '한 명만 인식할 수 있습니다.'
+            for box in boxes:
+                if boxes[0][2] - boxes[0][0] < box[2] - box[0]:
+                    boxes[0] = box
 
         if msgType != 0 and self.runtype != 'test':
             frame = self.draw_text(frame, self.set_msg(msgType), stand_box)
@@ -310,8 +312,8 @@ if __name__ == '__main__':
     # print('==================================================')
     # DataNodeImage().realtime_run('test', 'mtcnn', 'None')
     # print('==================================================')
-    # DataNodeImage().realtime_run('test', 'mtcnn', 'rot')
+    DataNodeImage().realtime_run('test', 'mtcnn', 'rot')
 
-    print('==================================================')
-    DataNodeImage().realtime_run('real', 'mtcnn', 'None')
+    # print('==================================================')
+    # DataNodeImage().realtime_run('real', 'mtcnn', 'None')
 
