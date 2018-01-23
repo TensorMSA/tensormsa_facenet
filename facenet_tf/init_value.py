@@ -14,8 +14,12 @@ class init_value():
         self.image_size = 160
 
         # Align
+        self.rotation = True
         self.input_dir   = self.project_dir + 'data/train_data/'
-        self.output_dir  = self.project_dir + 'data/detect_data/'
+        if self.rotation == True:
+            self.output_dir = self.project_dir + 'data/rotation_data/'
+        else:
+            self.output_dir  = self.project_dir + 'data/detect_data/'
         self.save_dir    = '/hoya_src_root/save_data/'
         self.random_order = False  # random.shuffle(dataset)
         self.detect_multiple_faces = False

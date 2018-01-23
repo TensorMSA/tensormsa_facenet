@@ -37,6 +37,8 @@ import numpy as np
 # Mrege --->
 import facenet_tf.src.common.facenet as facenet
 import facenet_tf.src.align.detect_face as detect_face
+import dlib, cv2
+from imutils.face_utils import FaceAligner
 
 import random
 from time import sleep
@@ -68,6 +70,9 @@ def main(args):
     minsize = args.minsize  # 20 # minimum size of face
     threshold = args.threshold  # [ 0.6, 0.7, 0.7 ]  # three steps's threshold
     factor = args.factor  # 0.709 # scale factor
+    predictor = dlib.shape_predictor(args.model_dir + args.land68_file.replace('.bz2', ''))
+    detector = dlib.get_frontal_face_detector()
+    fa = FaceAligner(predictor, desiredFaceWidth=args.image_size + args.cropped_size)
 
     # Add a random key to the filename to allow alignment using multiple processes
     random_key = np.random.randint(0, high=99999)
@@ -134,7 +139,16 @@ def main(args):
                                 bb[1] = np.maximum(det[1]-args.margin/2, 0)
                                 bb[2] = np.minimum(det[2]+args.margin/2, img_size[1])
                                 bb[3] = np.minimum(det[3]+args.margin/2, img_size[0])
-                                cropped = img[bb[1]:bb[3],bb[0]:bb[2],:]
+                                # cropped = img[bb[1]:bb[3],bb[0]:bb[2],:]
+                                # Mrege --->
+                                if args.rotation == True:
+                                    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                                    rect = dlib.rectangle(left=int(bb[0]), top=int(bb[1]),
+                                                          right=int(bb[2]), bottom=int(bb[3]))
+                                    cropped = fa.align(img, gray, rect)[args.cropped_size:args.image_size, args.cropped_size:args.image_size, :]
+                                else:
+                                    cropped = img[bb[1]:bb[3], bb[0]:bb[2], :]
+
                                 scaled = misc.imresize(cropped, (args.image_size, args.image_size), interp='bilinear')
                                 nrof_successfully_aligned += 1
                                 filename_base, file_extension = os.path.splitext(output_filename)

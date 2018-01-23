@@ -23,15 +23,11 @@ import logging
 import dlib
 from imutils.face_utils import rect_to_bb
 from imutils.face_utils import FaceAligner
-import facenet_tf.src.common.utils as utils
-from imutils.face_utils import FACIAL_LANDMARKS_IDXS
-from imutils.face_utils import shape_to_np
 
 class DataNodeImage():
-    def realtime_run(self, runtype = 'real', dettype = None, rottype = None):
+    def realtime_run(self, runtype = 'real', dettype = None):
         self.runtype = runtype
         self.dettype = dettype
-        self.rottype = rottype
         init_value.init_value.init(self)
 
         with tf.Graph().as_default():
@@ -66,7 +62,7 @@ class DataNodeImage():
                 # dlib rotation
                 self.predictor = dlib.shape_predictor(self.model_dir + self.land68_file.replace('.bz2', ''))
                 self.detector = dlib.get_frontal_face_detector()
-                self.fa = FaceAligner(self.predictor, desiredFaceWidth=self.image_size)
+                self.fa = FaceAligner(self.predictor, desiredFaceWidth=self.image_size+self.cropped_size)
 
                 if self.runtype == 'test':
                     test_data_files = []
@@ -116,18 +112,19 @@ class DataNodeImage():
         img_size = np.asarray(frame.shape)[0:2]
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        if self.dettype != 'dlib':
-            bounding_boxes, _ = detect_face.detect_face(frame, self.minsize, self.pnet, self.rnet, self.onet, self.threshold, self.factor)
-        else:
+        if self.dettype == 'dlib':
             bounding_boxes = self.detector(gray, 2)
+        else:
+            bounding_boxes, _ = detect_face.detect_face(frame, self.minsize, self.pnet, self.rnet, self.onet,
+                                                        self.threshold, self.factor)
 
         msgType = 0
         boxes = []
         for i in range(len(bounding_boxes)):
-            if self.dettype != 'dlib':
-                det = np.squeeze(bounding_boxes[i, 0:4])
-            else:
+            if self.dettype == 'dlib':
                 det = rect_to_bb(bounding_boxes[i])
+            else:
+                det = np.squeeze(bounding_boxes[i, 0:4])
 
             bb = np.zeros(4, dtype=np.int32)
             bb[0] = np.maximum(det[0] - self.margin / 2, 0)
@@ -151,6 +148,7 @@ class DataNodeImage():
 
         if len(boxes) == 0:
             self.reset_list(self.findlist)
+            return frame
         elif len(boxes) > 1:
             msgType = 3 # text = '한 명만 인식할 수 있습니다.'
             for box in boxes:
@@ -162,9 +160,9 @@ class DataNodeImage():
             # self.save_image(frame)
             return frame
 
-        if self.rottype == 'rot':
+        if self.rotation == True:
             rect = dlib.rectangle(left=int(boxes[0][0]), top=int(boxes[0][1]), right=int(boxes[0][2]), bottom=int(boxes[0][3]))
-            cropped = self.fa.align(frame, gray, rect)[self.cropped_size:self.image_size-self.cropped_size, self.cropped_size:self.image_size-self.cropped_size, :]
+            cropped = self.fa.align(frame, gray, rect)[self.cropped_size:self.image_size, self.cropped_size:self.image_size, :]
         else:
             cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
 
@@ -308,14 +306,14 @@ if __name__ == '__main__':
     # dlib, mtcnn
     # rot, None
     # print('==================================================')
-    # DataNodeImage().realtime_run('test', 'dlib', 'None')
+    # DataNodeImage().realtime_run('test', 'dlib')
     # print('==================================================')
-    # DataNodeImage().realtime_run('test', 'dlib', 'rot')
+    # DataNodeImage().realtime_run('test', 'dlib')
     # print('==================================================')
-    # DataNodeImage().realtime_run('test', 'mtcnn', 'None')
+    # DataNodeImage().realtime_run('test', 'mtcnn')
     # print('==================================================')
-    # DataNodeImage().realtime_run('test', 'mtcnn', 'rot')
+    # DataNodeImage().realtime_run('test', 'mtcnn')
 
     print('==================================================')
-    DataNodeImage().realtime_run('real', 'mtcnn', 'rot')
+    DataNodeImage().realtime_run('real', 'mtcnn')
 
