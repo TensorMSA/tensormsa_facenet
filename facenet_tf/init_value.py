@@ -57,6 +57,7 @@ class init_value():
         self.viewImageSizeX =3
         self.viewImageSizeY =3
         self.boxes_size = [80, 170]
+        self.cropped_size = 25
         self.findlist = ['','','','','']
 
         # feature train

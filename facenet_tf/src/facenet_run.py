@@ -24,6 +24,8 @@ import dlib
 from imutils.face_utils import rect_to_bb
 from imutils.face_utils import FaceAligner
 import facenet_tf.src.common.utils as utils
+from imutils.face_utils import FACIAL_LANDMARKS_IDXS
+from imutils.face_utils import shape_to_np
 
 class DataNodeImage():
     def realtime_run(self, runtype = 'real', dettype = None, rottype = None):
@@ -64,7 +66,7 @@ class DataNodeImage():
                 # dlib rotation
                 self.predictor = dlib.shape_predictor(self.model_dir + self.land68_file.replace('.bz2', ''))
                 self.detector = dlib.get_frontal_face_detector()
-                self.fa = FaceAligner(self.predictor, desiredFaceWidth=512)
+                self.fa = FaceAligner(self.predictor, desiredFaceWidth=self.image_size)
 
                 if self.runtype == 'test':
                     test_data_files = []
@@ -161,8 +163,8 @@ class DataNodeImage():
             return frame
 
         if self.rottype == 'rot':
-            boxesRect = dlib.rectangle(left=int(boxes[0][0]), top=int(boxes[0][1]), right=int(boxes[0][2]), bottom=int(boxes[0][3]))
-            cropped = self.fa.align(frame, gray, boxesRect)
+            rect = dlib.rectangle(left=int(boxes[0][0]), top=int(boxes[0][1]), right=int(boxes[0][2]), bottom=int(boxes[0][3]))
+            cropped = self.fa.align(frame, gray, rect)[self.cropped_size:self.image_size-self.cropped_size, self.cropped_size:self.image_size-self.cropped_size, :]
         else:
             cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
 
@@ -312,8 +314,8 @@ if __name__ == '__main__':
     # print('==================================================')
     # DataNodeImage().realtime_run('test', 'mtcnn', 'None')
     # print('==================================================')
-    DataNodeImage().realtime_run('test', 'mtcnn', 'rot')
+    # DataNodeImage().realtime_run('test', 'mtcnn', 'rot')
 
-    # print('==================================================')
-    # DataNodeImage().realtime_run('real', 'mtcnn', 'None')
+    print('==================================================')
+    DataNodeImage().realtime_run('real', 'mtcnn', 'rot')
 
