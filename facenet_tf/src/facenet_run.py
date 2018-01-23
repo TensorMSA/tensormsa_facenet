@@ -20,11 +20,16 @@ from PIL import ImageDraw
 import matplotlib.pyplot as plt
 import datetime
 import logging
-
+import dlib
+from imutils.face_utils import rect_to_bb
+from imutils.face_utils import FaceAligner
+import facenet_tf.src.common.utils as utils
 
 class DataNodeImage():
-    def realtime_run(self, runtype = 'real'):
+    def realtime_run(self, runtype = 'real', dettype = None, rottype = None):
         self.runtype = runtype
+        self.dettype = dettype
+        self.rottype = rottype
         init_value.init_value.init(self)
 
         with tf.Graph().as_default():
@@ -56,6 +61,11 @@ class DataNodeImage():
                 self.logger.addHandler(hdlr)
                 self.logger.setLevel(logging.WARNING)
 
+                # dlib rotation
+                self.predictor = dlib.shape_predictor(self.model_dir + self.land68_file.replace('.bz2', ''))
+                self.detector = dlib.get_frontal_face_detector()
+                self.fa = FaceAligner(self.predictor, desiredFaceWidth=512)
+
                 if self.runtype == 'test':
                     test_data_files = []
                     evaldirlist = sorted(os.listdir(self.eval_dir))
@@ -66,11 +76,12 @@ class DataNodeImage():
                         for evalfile in evalfile_list:
                             test_data_files.append(evalfile_path + '/' + evalfile)
                             # break
-                    for test_file in test_data_files:
-                        frame = misc.imread(test_file)
-                        pred, frame = self.getpredict(sess, frame)
-                        plt.imshow(frame)
-                        plt.show()
+                        print(evalfile_path)
+                        for test_file in test_data_files:
+                            frame = misc.imread(test_file)
+                            frame = self.getpredict(sess, frame)
+                            # plt.imshow(frame)
+                            # plt.show()
                 else:
                     self.pretime = '99' # 1 second save
                     video_capture = cv2.VideoCapture(0)
@@ -79,7 +90,7 @@ class DataNodeImage():
                         ret, frame = video_capture.read()
                         frame = cv2.flip( frame, 1 )
 
-                        pred, frame = self.getpredict(sess, frame)
+                        frame = self.getpredict(sess, frame)
 
                         frame = cv2.resize(frame, (0, 0), fx=self.viewImageSizeX, fy=self.viewImageSizeY)
                         cv2.imshow('Video', frame)
@@ -101,17 +112,30 @@ class DataNodeImage():
         saveframe = frame
         frame = cv2.resize(frame, (0, 0), fx=self.readImageSizeX, fy=self.readImageSizeY)
         img_size = np.asarray(frame.shape)[0:2]
-        bounding_boxes, _ = detect_face.detect_face(frame, self.minsize, self.pnet, self.rnet, self.onet, self.threshold, self.factor)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        if self.dettype != 'dlib':
+            bounding_boxes, _ = detect_face.detect_face(frame, self.minsize, self.pnet, self.rnet, self.onet, self.threshold, self.factor)
+        else:
+            bounding_boxes = self.detector(gray, 2)
 
         msgType = 0
         boxes = []
         for i in range(len(bounding_boxes)):
-            det = np.squeeze(bounding_boxes[i, 0:4])
+            if self.dettype != 'dlib':
+                det = np.squeeze(bounding_boxes[i, 0:4])
+            else:
+                det = rect_to_bb(bounding_boxes[i])
+
             bb = np.zeros(4, dtype=np.int32)
             bb[0] = np.maximum(det[0] - self.margin / 2, 0)
             bb[1] = np.maximum(det[1] - self.margin / 2, 0)
             bb[2] = np.minimum(det[2] + self.margin / 2, img_size[1])
             bb[3] = np.minimum(det[3] + self.margin / 2, img_size[0])
+
+            if self.dettype == 'dlib':
+                bb[2] += bb[0]
+                bb[3] += bb[1]
 
             # if bb[2] - bb[0] > self.boxes_size[0] and bb[2] - bb[0] < self.boxes_size[1]:
             #     boxes.append(bb)
@@ -132,9 +156,14 @@ class DataNodeImage():
         if msgType != 0 and self.runtype != 'test':
             frame = self.draw_text(frame, self.set_msg(msgType), stand_box)
             # self.save_image(frame)
-            return _, frame
+            return frame
 
-        cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
+        if self.rottype == 'rot':
+            boxesRect = dlib.rectangle(left=int(boxes[0][0]), top=int(boxes[0][1]), right=int(boxes[0][2]), bottom=int(boxes[0][3]))
+            cropped = self.fa.align(frame, gray, boxesRect)
+        else:
+            cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
+
         aligned = misc.imresize(cropped, (self.image_size, self.image_size), interp='bilinear')
         prewhitened = facenet.prewhiten(aligned)
         prewhitened_reshape = prewhitened.reshape(-1, self.image_size, self.image_size, 3)
@@ -178,7 +207,7 @@ class DataNodeImage():
             for pcnt in range(len(predictions[0])):
                 if predictions[0][pcnt] < 0.05:
                     continue
-                parray.append(str(predictions[0][pcnt])[:4]+'_'+self.class_names[pcnt])
+                parray.append(str(predictions[0][pcnt])[:5]+'_'+self.class_names[pcnt])
             parray.sort(reverse=True)
             print(parray)
 
@@ -203,7 +232,7 @@ class DataNodeImage():
 
         cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
         # self.save_image(frame, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
-        return _, frame
+        return frame
 
     def set_msg(self, msgType):
         if msgType == 1:
@@ -266,31 +295,23 @@ class DataNodeImage():
                 os.makedirs(folder)
             cv2.imwrite(folder + filename + '.png', frame)
 
-    # 1 second save
-    def save_image_time(self, frame, result_names, result_percent):
-        now = datetime.datetime.now()
-        nowtime = now.strftime('%Y%m%d%H%M%S')
-
-        if nowtime != self.pretime:
-            folder = self.save_dir + result_names.replace(' ', '_') + '/'
-            filename = result_names + result_percent
-            if result_names.find('Unknown') == -1:
-                if not os.path.exists(folder):
-                    os.makedirs(folder)
-                cv2.imwrite(folder+filename+'.png', frame)
-                self.pretime = nowtime
-            else:
-                if int(nowtime) - int(self.pretime) >= 1:
-                    filename = str(nowtime)
-                    if not os.path.exists(folder):
-                        os.makedirs(folder)
-                    cv2.imwrite(folder + filename + '.png', frame)
-                    self.pretime = nowtime
-
     def reset_list(self, list):
         for i in range(len(list)):
             list[i] = ''
 
 if __name__ == '__main__':
-    DataNodeImage().realtime_run('real')
+    # test, real
+    # dlib, mtcnn
+    # rot, None
+    # print('==================================================')
+    # DataNodeImage().realtime_run('test', 'dlib', 'None')
+    # print('==================================================')
+    # DataNodeImage().realtime_run('test', 'dlib', 'rot')
+    # print('==================================================')
+    # DataNodeImage().realtime_run('test', 'mtcnn', 'None')
+    # print('==================================================')
+    # DataNodeImage().realtime_run('test', 'mtcnn', 'rot')
+
+    print('==================================================')
+    DataNodeImage().realtime_run('real', 'mtcnn', 'None')
 

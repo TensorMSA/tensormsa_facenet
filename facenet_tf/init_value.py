@@ -1,6 +1,6 @@
 import os
 import facenet_tf.src.common.download_and_extract as download_and_extract
-
+import facenet_tf.src.common.utils as utils
 
 class init_value():
     def init(self):
@@ -29,6 +29,10 @@ class init_value():
         pre_model_name = '20170512-110547'
         self.model = self.model_dir + pre_model_name+'/'+pre_model_name+'.pb'
         download_and_extract.download_and_extract_file(pre_model_name, self.model_dir)
+
+        self.down_land68_url = 'http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2'
+        self.land68_file = 'shape_predictor_68_face_landmarks.dat.bz2'
+        utils.face_rotation_predictor_download(self)
 
         self.classifier_filename = self.model_dir + 'my_classifier_detect.pkl'
         self.use_split_dataset = False
