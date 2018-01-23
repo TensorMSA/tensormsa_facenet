@@ -18,8 +18,10 @@ class init_value():
         self.input_dir   = self.project_dir + 'data/train_data/'
         if self.rotation == True:
             self.output_dir = self.project_dir + 'data/rotation_data/'
+            self.classifier_filename = self.model_dir + 'my_classifier_rotation.pkl'
         else:
             self.output_dir  = self.project_dir + 'data/detect_data/'
+            self.classifier_filename = self.model_dir + 'my_classifier_detect.pkl'
         self.save_dir    = '/hoya_src_root/save_data/'
         self.random_order = False  # random.shuffle(dataset)
         self.detect_multiple_faces = False
@@ -38,7 +40,6 @@ class init_value():
         self.land68_file = 'shape_predictor_68_face_landmarks.dat.bz2'
         utils.face_rotation_predictor_download(self)
 
-        self.classifier_filename = self.model_dir + 'my_classifier_detect.pkl'
         self.use_split_dataset = False
         self.data_dir = self.output_dir
         self.mode = 'TRAIN'
