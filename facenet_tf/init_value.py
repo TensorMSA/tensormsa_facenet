@@ -11,11 +11,15 @@ class init_value():
         self.threshold = [0.6, 0.7, 0.7] # three steps's threshold
         self.factor = 0.709 # scale factor
         self.margin = 0
-        self.image_size = 160
+        self.image_size = 80
 
         # Align
-        self.rotation = True
+        self.rotation = False
         self.input_dir   = self.project_dir + 'data/train_data/'
+        self.model_dir = self.project_dir + 'pre_model/'
+        if not os.path.exists(self.model_dir):
+            os.makedirs(self.model_dir)
+
         if self.rotation == True:
             self.output_dir = self.project_dir + 'data/rotation_data/'
             self.classifier_filename = self.model_dir + 'my_classifier_rotation.pkl'
@@ -27,10 +31,6 @@ class init_value():
         self.detect_multiple_faces = False
 
         # Classifier
-        self.model_dir = self.project_dir + 'pre_model/'
-        if not os.path.exists(self.model_dir):
-            os.makedirs(self.model_dir)
-
         # get pre Model Down
         pre_model_name = '20170512-110547'
         self.model = self.model_dir + pre_model_name+'/'+pre_model_name+'.pb'
@@ -44,7 +44,7 @@ class init_value():
         self.data_dir = self.output_dir
         self.mode = 'TRAIN'
         self.seed = 666
-        self.batch_size = 90
+        self.batch_size = 900
 
         # facenet_run
         self.debug = 'N' # 이미지 Log를 볼때 사용한다.
@@ -71,7 +71,6 @@ class init_value():
         self.models_base_dir=self.model_dir
         self.data_dir= self.output_dir    # '~/datasets/casia/casia_maxpy_mtcnnalign_182_160'
         self.max_nrof_epochs=1
-        self.batch_size=90
         self.epoch_size=1
         self.embedding_size=128
         self.keep_probability=1.0

@@ -91,7 +91,7 @@ def main(args):
                 feed_dict = { images_placeholder:images, phase_train_placeholder:False }
                 emb_array[start_index:end_index,:] = sess.run(embeddings, feed_dict=feed_dict)
                 # Mrege --->
-                print(str(i)+'/'+str(nrof_batches_per_epoch))
+                print(str(i+1)+'/'+str(nrof_batches_per_epoch))
             
             classifier_filename_exp = os.path.expanduser(args.classifier_filename)
 
