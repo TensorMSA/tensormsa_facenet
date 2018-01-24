@@ -11,7 +11,7 @@ class init_value():
         self.threshold = [0.6, 0.7, 0.7] # three steps's threshold
         self.factor = 0.709 # scale factor
         self.margin = 0
-        self.image_size = 80
+        self.image_size = 160
 
         # Align
         self.rotation = False
@@ -64,6 +64,8 @@ class init_value():
         self.boxes_size = [80, 170]
         self.cropped_size = 25
         self.findlist = ['','','','','']
+        self.prediction_cnt = 5
+        self.conf_max = 0.1
 
         # feature train
         self.model_def = 'models.inception_resnet_v1'

@@ -155,7 +155,7 @@ class DataNodeImage():
                 if boxes[0][2] - boxes[0][0] < box[2] - box[0]:
                     boxes[0] = box
 
-        if msgType != 0 and self.runtype != 'test':
+        if msgType != 0 and self.runtype == 'real':
             frame = self.draw_text(frame, self.set_msg(msgType), stand_box)
             # self.save_image(frame)
             return frame
@@ -177,41 +177,38 @@ class DataNodeImage():
         predictions = self.model.predict_proba(emb)
         best_class_indices = np.argmax(predictions, axis=1)
         best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
+        cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
 
-        try:
-            viewFlag = 'Y'
-            for fcnt in range(len(self.findlist)):
-                if self.findlist[fcnt] == '':
-                    self.findlist[fcnt] = self.class_names[best_class_indices[0]]
-                    viewFlag = 'N'
+        for fcnt in range(len(self.findlist)):
+            pre = self.findlist[fcnt]
+            cur = self.class_names[best_class_indices[0]]
+            preun = pre.lower().find('unknown')
+            curun = cur.lower().find('unknown')
+            if best_class_probabilities[0] > self.conf_max:
+                if curun > -1:
+                    cur = 'unknown'
+
+                if pre == '' or (preun > -1 and curun == -1):
+                    self.findlist[fcnt] = cur
                     break
+                elif pre != cur and curun == -1:
+                    self.logger.error('====================================================')
+                    self.logger.error(self.findlist)
+                    self.logger.error('Current Fail Predict : '+self.class_names[best_class_indices[0]]+'('+str(best_class_probabilities[0])[:5]+')')
+                    self.reset_list(self.findlist)
 
-                if self.findlist[fcnt] != self.class_names[best_class_indices[0]]:
-                    if self.class_names[best_class_indices[0]].lower().find('unknown') == -1:
-                        if self.findlist[fcnt].lower().find('unknown') == -1:
-                            self.logger.error(self.findlist)
-                            self.logger.error('Failed : '+self.class_names[best_class_indices[0]]+'('+str(best_class_probabilities[0])[:5]+')')
-                        self.reset_list(self.findlist)
-                        viewFlag = 'N'
-        except Exception as e:
-            viewFlag = 'N'
-            print(e)
         # print(self.findlist)
-
-        if viewFlag == 'Y' or self.runtype == 'test':
+        # print(self.class_names[best_class_indices[0]]+' '+str(best_class_probabilities[0])[:5])
+        if '' not in self.findlist or self.findlist.count('unknown') == len(self.findlist):
+            # save
             self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
-            frame = Image.fromarray(np.uint8(frame))
-            draw = ImageDraw.Draw(frame)
-            font = ImageFont.truetype(self.font_location, 16)
 
             # log
             parray = []
             for pcnt in range(len(predictions[0])):
-                if predictions[0][pcnt] < 0.05:
-                    continue
                 parray.append(str(predictions[0][pcnt])[:5]+'_'+self.class_names[pcnt])
             parray.sort(reverse=True)
-            print(parray)
+            print(parray[:5])
 
             resultFlag = 'Y'
             result = self.class_names[best_class_indices[0]]
@@ -226,13 +223,14 @@ class DataNodeImage():
                     result = self.findlist[rcnt]
                     result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
 
+            frame = Image.fromarray(np.uint8(frame))
+            draw = ImageDraw.Draw(frame)
+            font = ImageFont.truetype(self.font_location, 16)
             draw.text((boxes[0][0], boxes[0][1]-15), result_names, self.text_color, font=font)
             font = ImageFont.truetype(self.font_location, 20)
             result_names = result + ' 님 인증 되었습니다.'
             draw.text((stand_box[0], stand_box[1] - 30), result_names, self.text_color, font=font)
             frame = np.array(frame)
-
-        cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
         # self.save_image(frame, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
         return frame
 
