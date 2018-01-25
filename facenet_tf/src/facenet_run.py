@@ -120,11 +120,12 @@ class DataNodeImage():
 
         msgType = 0
         boxes = []
-        for i in range(len(bounding_boxes)):
+
+        for bounding_box in bounding_boxes:
             if self.dettype == 'dlib':
-                det = rect_to_bb(bounding_boxes[i])
+                det = rect_to_bb(bounding_box[0:4])
             else:
-                det = np.squeeze(bounding_boxes[i, 0:4])
+                det = np.squeeze(bounding_box[0:4])
 
             bb = np.zeros(4, dtype=np.int32)
             bb[0] = np.maximum(det[0] - self.margin / 2, 0)
@@ -179,8 +180,9 @@ class DataNodeImage():
         best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
         cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
 
-        for fcnt in range(len(self.findlist)):
-            pre = self.findlist[fcnt]
+        fcnt = 0
+        for flist in self.findlist:
+            pre = flist
             cur = self.class_names[best_class_indices[0]]
             preun = pre.lower().find('unknown')
             curun = cur.lower().find('unknown')
@@ -196,6 +198,7 @@ class DataNodeImage():
                     self.logger.error(self.findlist)
                     self.logger.error('Current Fail Predict : '+self.class_names[best_class_indices[0]]+'('+str(best_class_probabilities[0])[:5]+')')
                     self.reset_list(self.findlist)
+            fcnt += 1
 
         # print(self.findlist)
         # print(self.class_names[best_class_indices[0]]+' '+str(best_class_probabilities[0])[:5])
@@ -205,10 +208,9 @@ class DataNodeImage():
 
             # log
             parray = []
-            for pcnt in range(len(predictions[0])):
+            for pcnt in predictions[0].argsort()[::-1][:self.prediction_cnt]:
                 parray.append(str(predictions[0][pcnt])[:5]+'_'+self.class_names[pcnt])
-            parray.sort(reverse=True)
-            print(parray[:5])
+            print(parray)
 
             resultFlag = 'Y'
             result = self.class_names[best_class_indices[0]]

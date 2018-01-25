@@ -9,7 +9,7 @@ class init_value():
         self.gpu_memory_fraction = 0.8
         self.minsize = 20 # minimum size of face
         self.threshold = [0.6, 0.7, 0.7] # three steps's threshold
-        self.factor = 0.709 # scale factor
+        self.factor = 0.9 # scale factor 0.709
         self.margin = 0
         self.image_size = 160
 
