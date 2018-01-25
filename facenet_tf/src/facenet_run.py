@@ -99,12 +99,9 @@ class DataNodeImage():
                     cv2.destroyAllWindows()
 
     def getpredict(self, sess, frame):
-        min_box = round(frame.shape[1]/10)
-        stand_box = []
-        stand_box.append(round(frame.shape[1]/4))
-        stand_box.append(round(frame.shape[0]/8))
-        stand_box.append(round(frame.shape[1]/4)*3)
-        stand_box.append(round(frame.shape[0]/5)*4)
+        stand_box = [self.stand_box[0], self.stand_box[1]]
+        stand_box.append(frame.shape[1]-self.stand_box[0])
+        stand_box.append(frame.shape[0] - self.stand_box[1])
         self.draw_border(frame, (stand_box[0], stand_box[1]), (stand_box[2], stand_box[3]), self.stand_box_color, 2, 10, 20)
 
         saveframe = frame
@@ -137,9 +134,7 @@ class DataNodeImage():
                 bb[2] += bb[0]
                 bb[3] += bb[1]
 
-            # if bb[2] - bb[0] > self.boxes_size[0] and bb[2] - bb[0] < self.boxes_size[1]:
-            #     boxes.append(bb)
-            if min_box > bb[2] - bb[0] and bb[2] - bb[0] > 0:
+            if self.boxes_min > bb[2] - bb[0] and bb[2] - bb[0] > 0:
                 msgType = 1 # text = '가까이 다가와 주세요.'
 
             if msgType == 0 and stand_box[0] > bb[0] or stand_box[2] < bb[2] or stand_box[1] > bb[1] or stand_box[3] < bb[3]:
@@ -166,7 +161,7 @@ class DataNodeImage():
             cropped = self.fa.align(frame, gray, rect)[self.cropped_size:self.image_size, self.cropped_size:self.image_size, :]
         else:
             cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
-
+        # print(cropped)
         aligned = misc.imresize(cropped, (self.image_size, self.image_size), interp='bilinear')
         prewhitened = facenet.prewhiten(aligned)
         prewhitened_reshape = prewhitened.reshape(-1, self.image_size, self.image_size, 3)
@@ -186,7 +181,7 @@ class DataNodeImage():
             cur = self.class_names[best_class_indices[0]]
             preun = pre.lower().find('unknown')
             curun = cur.lower().find('unknown')
-            if best_class_probabilities[0] > self.conf_max:
+            if best_class_probabilities[0] > self.prediction_max:
                 if curun > -1:
                     cur = 'unknown'
 
@@ -201,16 +196,15 @@ class DataNodeImage():
             fcnt += 1
 
         # print(self.findlist)
-        # print(self.class_names[best_class_indices[0]]+' '+str(best_class_probabilities[0])[:5])
+        # log
+        parray = []
+        for pcnt in predictions[0].argsort()[::-1][:self.prediction_cnt]:
+            parray.append(str(predictions[0][pcnt])[:5] + '_' + self.class_names[pcnt])
+        print(parray)
+
         if '' not in self.findlist or self.findlist.count('unknown') == len(self.findlist):
             # save
             self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
-
-            # log
-            parray = []
-            for pcnt in predictions[0].argsort()[::-1][:self.prediction_cnt]:
-                parray.append(str(predictions[0][pcnt])[:5]+'_'+self.class_names[pcnt])
-            print(parray)
 
             resultFlag = 'Y'
             result = self.class_names[best_class_indices[0]]

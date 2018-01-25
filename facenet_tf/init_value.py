@@ -57,15 +57,18 @@ class init_value():
         self.alert_color = (0, 0, 255)
         self.box_color = (120, 160, 230)
         self.text_color = (0, 255, 0)
+        self.prediction_cnt = 5  # 로그를 보여주는 개수를 정함
+        self.cropped_size = 25  # rotation use
+
         self.readImageSizeX = 1
         self.readImageSizeY = 1
         self.viewImageSizeX =3
         self.viewImageSizeY =3
-        self.boxes_size = [80, 170]
-        self.cropped_size = 25
-        self.findlist = ['','','','','']
-        self.prediction_cnt = 5
-        self.conf_max = 0.1
+
+        self.findlist = ['', '', '', '', '']  # 배열에 모두 동일한 값이 들어가야 인증이 됨.
+        self.boxes_min = 60 # detect min box size
+        self.stand_box = [150, 60]# top left(width, height)
+        self.prediction_max = 0.1 # 이 수치 이상 정합성을 보여야 인정 됨.
 
         # feature train
         self.model_def = 'models.inception_resnet_v1'
