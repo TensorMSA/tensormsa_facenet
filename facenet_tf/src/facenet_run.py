@@ -133,23 +133,24 @@ class DataNodeImage():
             if self.dettype == 'dlib':
                 bb[2] += bb[0]
                 bb[3] += bb[1]
-
-            if self.boxes_min > bb[2] - bb[0] and bb[2] - bb[0] > 0:
-                msgType = 1 # text = '가까이 다가와 주세요.'
-
-            if msgType == 0 and stand_box[0] > bb[0] or stand_box[2] < bb[2] or stand_box[1] > bb[1] or stand_box[3] < bb[3]:
-                msgType = 2  # text = '박스 안으로 움직여 주세요.'
-
-            boxes.append(bb)
+            if len(boxes) == 0:
+                boxes.append(bb)
+            else:
+                if boxes[0][2] - boxes[0][0] < bb[2] - bb[0]:
+                    boxes[0] = bb
 
         if len(boxes) == 0:
             self.reset_list(self.findlist)
             return frame
-        elif len(boxes) > 1:
-            msgType = 3 # text = '한 명만 인식할 수 있습니다.'
-            for box in boxes:
-                if boxes[0][2] - boxes[0][0] < box[2] - box[0]:
-                    boxes[0] = box
+
+        # if len(bounding_boxes) > 1:
+        #     msgType = 3  # text = '한 명만 인식할 수 있습니다.'
+
+        if msgType == 0:
+            if self.boxes_min > boxes[0][2] - boxes[0][0]:
+                msgType = 1  # text = '가까이 다가와 주세요.'
+            elif stand_box[0] > boxes[0][0] or stand_box[2] < boxes[0][2] or stand_box[1] > boxes[0][1] or stand_box[3] < boxes[0][3]:
+                msgType = 2  # text = '박스 안으로 움직여 주세요.'
 
         if msgType != 0 and self.runtype == 'real':
             frame = self.draw_text(frame, self.set_msg(msgType), stand_box)
@@ -195,8 +196,6 @@ class DataNodeImage():
                     self.reset_list(self.findlist)
             fcnt += 1
 
-        # print(self.findlist)
-        # log
         parray = []
         for pcnt in predictions[0].argsort()[::-1][:self.prediction_cnt]:
             parray.append(str(predictions[0][pcnt])[:5] + '_' + self.class_names[pcnt])
@@ -224,9 +223,13 @@ class DataNodeImage():
             font = ImageFont.truetype(self.font_location, 16)
             draw.text((boxes[0][0], boxes[0][1]-15), result_names, self.text_color, font=font)
             font = ImageFont.truetype(self.font_location, 20)
-            result_names = result + ' 님 인증 되었습니다.'
+            if self.findlist.count('unknown') > 0:
+                result_names = ''
+            else:
+                result_names = result + ' 님 인증 되었습니다.'
             draw.text((stand_box[0], stand_box[1] - 30), result_names, self.text_color, font=font)
             frame = np.array(frame)
+            self.reset_list(self.findlist)
         # self.save_image(frame, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
         return frame
 
