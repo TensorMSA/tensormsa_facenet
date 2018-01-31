@@ -1,5 +1,5 @@
 import os, wget, bz2, dlib
-
+import numpy as np
 # common utils
 def face_rotation_predictor_download(self):
     down_pred_url = self.down_land68_url
@@ -24,7 +24,22 @@ def face_rotation_predictor_download(self):
     detector = dlib.get_frontal_face_detector()
     return predictor, detector
 
+def get_images_labels_pair(emb_array, labels):
+    p = 0
+    nrof_images = len(labels)
+    emb_array_pair = np.zeros((nrof_images * nrof_images, emb_array.shape[1]))
+    labels_pair = []
+    for i in range(nrof_images):
+        for j in range(nrof_images):
+            embsub = np.subtract(emb_array[i], emb_array[j])
+            emb_array_pair[p] = embsub
+            p += 1
 
+            if labels[i] == labels[j]:
+                labels_pair.append(0)
+            else:
+                labels_pair.append(1)
+    return emb_array_pair, labels_pair
 
 
 

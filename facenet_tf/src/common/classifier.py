@@ -33,6 +33,7 @@ import argparse
 # import facenet
 # Mrege --->
 import facenet_tf.src.common.facenet as facenet
+import facenet_tf.src.common.utils as utils
 
 import os
 import sys
@@ -99,8 +100,11 @@ def main(args):
                 # Train classifier
                 print('Training classifier')
                 model = SVC(kernel='linear', probability=True)
+                # Mrege --->
+                if args.pair:
+                    emb_array, labels = utils.get_images_labels_pair(emb_array, labels)
                 model.fit(emb_array, labels)
-            
+
                 # Create a list of class names
                 class_names = [ cls.name.replace('_', ' ') for cls in dataset]
 

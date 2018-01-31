@@ -31,6 +31,8 @@ class init_value():
         self.detect_multiple_faces = False
 
         # Classifier
+        self.pair = True
+
         # get pre Model Down
         pre_model_name = '20170512-110547'
         self.model = self.model_dir + pre_model_name+'/'+pre_model_name+'.pb'
