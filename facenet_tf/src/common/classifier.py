@@ -103,10 +103,11 @@ def main(args):
                 # Mrege --->
                 if args.pair:
                     emb_array, labels = utils.get_images_labels_pair(emb_array, labels)
+                    class_names = ['same', 'diff']
+                else:
+                    class_names = [cls.name.replace('_', ' ') for cls in dataset]
+                print('Model fit start')
                 model.fit(emb_array, labels)
-
-                # Create a list of class names
-                class_names = [ cls.name.replace('_', ' ') for cls in dataset]
 
                 # Saving classifier model
                 with open(classifier_filename_exp, 'wb') as outfile:

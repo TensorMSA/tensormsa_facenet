@@ -21,17 +21,18 @@ class init_value():
             os.makedirs(self.model_dir)
 
         if self.rotation == True:
-            self.output_dir = self.project_dir + 'data/rotation_data/'
-            self.classifier_filename = self.model_dir + 'my_classifier_rotation.pkl'
+            self.output_dir = self.project_dir + 'data/train_rotation/'
+            self.classifier_filename = self.model_dir + 'my_train_rotation.pkl'
         else:
-            self.output_dir  = self.project_dir + 'data/detect_data/'
-            self.classifier_filename = self.model_dir + 'my_classifier_detect.pkl'
+            self.output_dir  = self.project_dir + 'data/train_detect/'
+            self.classifier_filename = self.model_dir + 'my_train_detect.pkl'
         self.save_dir    = '/hoya_src_root/save_data/'
         self.random_order = False  # random.shuffle(dataset)
         self.detect_multiple_faces = False
 
         # Classifier
         self.pair = True
+        self.gallery_filename = self.model_dir + 'my_gallery_detect.pkl'
 
         # get pre Model Down
         pre_model_name = '20170512-110547'
