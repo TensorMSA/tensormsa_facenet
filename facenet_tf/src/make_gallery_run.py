@@ -9,8 +9,8 @@ class Facenet_run():
 
         # object detect
         self.input_dir = self.project_dir + 'data/gallery_data/'
-        if not os.path.exists(self.gallery_dir):
-            os.makedirs(self.gallery_dir)
+        if not os.path.exists(self.input_dir):
+            os.makedirs(self.input_dir)
         self.output_dir = self.project_dir + 'data/gallery_detect/'
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
