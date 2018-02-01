@@ -23,6 +23,7 @@ import logging
 import dlib
 from imutils.face_utils import rect_to_bb
 from imutils.face_utils import FaceAligner
+import facenet_tf.src.common.utils as utils
 
 class DataNodeImage():
     def realtime_run(self, runtype = 'real', dettype = None):
@@ -65,12 +66,12 @@ class DataNodeImage():
                 self.fa = FaceAligner(self.predictor, desiredFaceWidth=self.image_size+self.cropped_size)
 
                 if self.runtype == 'test':
-                    test_data_files = []
+
                     evaldirlist = sorted(os.listdir(self.eval_dir))
                     for evalpath in evaldirlist:
                         evalfile_path = self.eval_dir + '/' + evalpath
                         evalfile_list = os.listdir(evalfile_path)
-
+                        test_data_files = []
                         for evalfile in evalfile_list:
                             test_data_files.append(evalfile_path + '/' + evalfile)
                             # break
@@ -181,8 +182,11 @@ class DataNodeImage():
             emb_array = pairfile['arr_0']
             emb_labels = pairfile['arr_1']
             self.class_names = pairfile['arr_2']
-            emb = emb_array - emb
-            predictions = self.model.predict_proba(emb)
+            emb_sub = emb_array - emb
+            dist = []
+            for e in emb_sub:
+                dist.append(np.sqrt(np.sum(np.square(e))))
+            predictions = self.model.predict_proba(emb_sub)
             best_class_indices = [emb_labels[np.argmax(predictions, axis=0)[0]]]
             best_class_probabilities = np.amax(predictions, axis=0)
             for pcnt in predictions[:,0].argsort()[::-1][:self.prediction_cnt]:
@@ -194,9 +198,9 @@ class DataNodeImage():
 
             for pcnt in predictions[0].argsort()[::-1][:self.prediction_cnt]:
                 parray.append(str(predictions[0][pcnt])[:5] + '_' + self.class_names[pcnt])
-
+        # print('----------------------------------------------------------------------------------')
         print(parray)
-
+        # print('----------------------------------------------------------------------------------')
         fcnt = 0
         for flist in self.findlist:
             pre = flist
@@ -325,8 +329,8 @@ if __name__ == '__main__':
     # print('==================================================')
     # DataNodeImage().realtime_run('test', 'mtcnn')
     # print('==================================================')
-    DataNodeImage().realtime_run('test', 'mtcnn')
+    # DataNodeImage().realtime_run('test', 'mtcnn')
 
-    # print('==================================================')
-    # DataNodeImage().realtime_run('real', 'mtcnn')
+    print('==================================================')
+    DataNodeImage().realtime_run('real', 'mtcnn')
 
