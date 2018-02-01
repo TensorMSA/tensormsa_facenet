@@ -2,6 +2,7 @@ import os, wget, bz2, dlib
 import numpy as np
 import tensorflow as tf
 import facenet_tf.src.common.facenet as facenet
+import matplotlib.pyplot as plt
 
 # common utils
 def face_rotation_predictor_download(self):
@@ -77,6 +78,7 @@ def make_feature(args):
             print('Calculating features for images')
             nrof_images = len(paths)
             emb_array = np.zeros((nrof_images, embedding_size))
+
 
             for i in range(nrof_images):
                 start_index = i * args.batch_size

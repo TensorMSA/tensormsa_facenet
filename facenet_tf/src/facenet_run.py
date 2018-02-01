@@ -163,18 +163,39 @@ class DataNodeImage():
         else:
             cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
         # print(cropped)
+        cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
+
         aligned = misc.imresize(cropped, (self.image_size, self.image_size), interp='bilinear')
         prewhitened = facenet.prewhiten(aligned)
         prewhitened_reshape = prewhitened.reshape(-1, self.image_size, self.image_size, 3)
+        # prewhitened_reshape = np.zeros((1, self.image_size, self.image_size, 3))
+        # prewhitened_reshape[0, :, :, :] = prewhitened
 
         # Run forward pass to calculate embeddings
         feed_dict = {self.images_placeholder: prewhitened_reshape, self.phase_train_placeholder: False}
         emb = sess.run(self.embeddings, feed_dict=feed_dict)
 
-        predictions = self.model.predict_proba(emb)
-        best_class_indices = np.argmax(predictions, axis=1)
-        best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
-        cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
+        parray = []
+        if self.pair:
+            pairfile = np.load(self.gallery_filename+'.npz')
+            emb_array = pairfile['arr_0']
+            emb_labels = pairfile['arr_1']
+            self.class_names = pairfile['arr_2']
+            emb = emb_array - emb
+            predictions = self.model.predict_proba(emb)
+            best_class_indices = [emb_labels[np.argmax(predictions, axis=0)[0]]]
+            best_class_probabilities = np.amax(predictions, axis=0)
+            for pcnt in predictions[:,0].argsort()[::-1][:self.prediction_cnt]:
+                parray.append(str(predictions[pcnt][0])[:5] + '_' + self.class_names[emb_labels[pcnt]])
+        else:
+            predictions = self.model.predict_proba(emb)
+            best_class_indices = np.argmax(predictions, axis=1)
+            best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
+
+            for pcnt in predictions[0].argsort()[::-1][:self.prediction_cnt]:
+                parray.append(str(predictions[0][pcnt])[:5] + '_' + self.class_names[pcnt])
+
+        print(parray)
 
         fcnt = 0
         for flist in self.findlist:
@@ -195,11 +216,6 @@ class DataNodeImage():
                     self.logger.error('Current Fail Predict : '+self.class_names[best_class_indices[0]]+'('+str(best_class_probabilities[0])[:5]+')')
                     self.reset_list(self.findlist)
             fcnt += 1
-
-        parray = []
-        for pcnt in predictions[0].argsort()[::-1][:self.prediction_cnt]:
-            parray.append(str(predictions[0][pcnt])[:5] + '_' + self.class_names[pcnt])
-        print(parray)
 
         if '' not in self.findlist or self.findlist.count('unknown') == len(self.findlist):
             # save
@@ -309,8 +325,8 @@ if __name__ == '__main__':
     # print('==================================================')
     # DataNodeImage().realtime_run('test', 'mtcnn')
     # print('==================================================')
-    # DataNodeImage().realtime_run('test', 'mtcnn')
+    DataNodeImage().realtime_run('test', 'mtcnn')
 
-    print('==================================================')
-    DataNodeImage().realtime_run('real', 'mtcnn')
+    # print('==================================================')
+    # DataNodeImage().realtime_run('real', 'mtcnn')
 

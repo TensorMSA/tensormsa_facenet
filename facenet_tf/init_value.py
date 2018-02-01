@@ -32,7 +32,7 @@ class init_value():
 
         # Classifier
         self.pair = True
-        self.gallery_filename = self.model_dir + 'my_gallery_detect.pkl'
+        self.gallery_filename = self.model_dir + 'my_gallery_detect'
 
         # get pre Model Down
         pre_model_name = '20170512-110547'
