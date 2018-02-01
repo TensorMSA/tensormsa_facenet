@@ -35,7 +35,7 @@ def get_images_labels_pair(emb_array, labels):
     labels_pair = []
     for i in range(nrof_images):
         for j in range(nrof_images):
-            embsub = np.subtract(emb_array[i], emb_array[j])
+            embsub = emb_array[i] * emb_array[j]
             emb_array_pair[p] = embsub
             p += 1
 

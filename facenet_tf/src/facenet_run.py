@@ -182,7 +182,7 @@ class DataNodeImage():
             emb_array = pairfile['arr_0']
             emb_labels = pairfile['arr_1']
             self.class_names = pairfile['arr_2']
-            emb_sub = emb_array - emb
+            emb_sub = emb_array * emb
             dist = []
             for e in emb_sub:
                 dist.append(np.sqrt(np.sum(np.square(e))))
@@ -190,14 +190,14 @@ class DataNodeImage():
             best_class_indices = [emb_labels[np.argmax(predictions, axis=0)[0]]]
             best_class_probabilities = np.amax(predictions, axis=0)
             for pcnt in predictions[:,0].argsort()[::-1][:self.prediction_cnt]:
-                parray.append(str(predictions[pcnt][0])[:5] + '_' + self.class_names[emb_labels[pcnt]])
+                parray.append(str(predictions[pcnt][0])[:7] + '_' + self.class_names[emb_labels[pcnt]])
         else:
             predictions = self.model.predict_proba(emb)
             best_class_indices = np.argmax(predictions, axis=1)
             best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
 
             for pcnt in predictions[0].argsort()[::-1][:self.prediction_cnt]:
-                parray.append(str(predictions[0][pcnt])[:5] + '_' + self.class_names[pcnt])
+                parray.append(str(predictions[0][pcnt])[:7] + '_' + self.class_names[pcnt])
         # print('----------------------------------------------------------------------------------')
         print(parray)
         # print('----------------------------------------------------------------------------------')

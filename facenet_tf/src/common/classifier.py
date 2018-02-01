@@ -34,6 +34,7 @@ import argparse
 # Mrege --->
 import facenet_tf.src.common.facenet as facenet
 import facenet_tf.src.common.utils as utils
+import matplotlib.pyplot as plt
 
 import os
 import sys
