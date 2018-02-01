@@ -111,7 +111,7 @@ def main(args):
                         class_names = ['same', 'diff']
                     else:
                         class_names = [cls.name.replace('_', ' ') for cls in dataset]
-                    print('Model fit start')
+                    print('Model fit start... count('+str(len(labels))+')')
                     model.fit(emb_array, labels)
 
                     # Saving classifier model

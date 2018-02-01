@@ -32,7 +32,7 @@ class init_value():
 
         # Classifier
         self.pair = True
-        self.weight = True
+        self.weight = False
         self.gallery_filename = self.model_dir + 'my_gallery_detect'
 
         # get pre Model Down

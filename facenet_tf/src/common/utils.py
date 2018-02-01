@@ -36,14 +36,18 @@ def get_images_labels_pair(emb_array, labels):
     labels_pair = []
     for i in range(nrof_images):
         for j in range(nrof_images):
-            embsub = emb_array[i] * emb_array[j]
-            emb_array_pair[p] = embsub
-            p += 1
+            input = False
 
             if labels[i] == labels[j]:
                 labels_pair.append(0)
+                input = True
             else:
                 labels_pair.append(1)
+            if input:
+                embsub = emb_array[i] * emb_array[j]
+                emb_array_pair[p] = embsub
+                p += 1
+
         print(str(i+1))
     return emb_array_pair, labels_pair
 
@@ -156,8 +160,8 @@ def train_weight(emb_array, labels):
     # print("test accuracy: %g" % sess.run(accuracy, feed_dict={x: mnist.test.images, y_target: mnist.test.labels}))
     sess.close()
 
-npzfile = np.load('/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_gallery_detect.npz')
-emb_array = npzfile['arr_0']
-labels = npzfile['arr_1']
-emb_array,labels = get_images_labels_pair(emb_array,labels)
-train_weight(emb_array,labels)
+# npzfile = np.load('/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_gallery_detect.npz')
+# emb_array = npzfile['arr_0']
+# labels = npzfile['arr_1']
+# emb_array,labels = get_images_labels_pair(emb_array,labels)
+# train_weight(emb_array,labels)
