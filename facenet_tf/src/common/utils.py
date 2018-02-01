@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 import facenet_tf.src.common.facenet as facenet
 import matplotlib.pyplot as plt
+from keras.utils import np_utils
 
 # common utils
 def face_rotation_predictor_download(self):
@@ -94,4 +95,69 @@ def make_feature(args):
 
             np.savez(args.gallery_filename, emb_array, labels, class_names)
 
+def train_weight(emb_array, labels):
+    # placeholder is used for feeding data.
+    x = tf.placeholder("float", shape=[None, 128],name='x')
+    y_target = tf.placeholder("float", shape=[None, 2],name='y_target')
 
+    # all the variables are allocated in GPU memory
+    W1 = tf.Variable(tf.zeros([128, 2]), name='W1')
+    b1 = tf.Variable(tf.zeros([2]), name='b1')
+    y = tf.nn.softmax(tf.matmul(x, W1) + b1, name='y')
+
+    # define the Loss function
+    cross_entropy = -tf.reduce_sum(y_target * tf.log(y), name='cross_entropy')
+
+    # define optimization algorithm
+    train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy)
+
+    correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_target, 1))
+    # correct_prediction is list of boolean which is the result of comparing(model prediction , data)
+
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+    # tf.cast() : changes true -> 1 / false -> 0
+    # tf.reduce_mean() : calculate the mean
+
+    # create summary of parameters
+    tf.summary.histogram('weights_1', W1)
+    tf.summary.histogram('y', y)
+    tf.summary.scalar('cross_entropy', cross_entropy)
+    merged = tf.summary.merge_all()
+
+    # Create Session
+    sess = tf.Session(config=tf.ConfigProto(
+        gpu_options=tf.GPUOptions(allow_growth=True)))  # open a session which is a envrionment of computation graph.
+    sess.run(tf.global_variables_initializer())  # initialize the variables
+
+    summary_writer = tf.summary.FileWriter("/tmp/mlp", sess.graph)
+
+    labels = np_utils.to_categorical(labels,2)
+    # mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
+    j = 0
+    # training the MLP
+    for i in range(5001):  # minibatch iteraction
+        # batch = mnist.train.next_batch(100)  # minibatch size
+        x_batch = emb_array[j:j+100]
+        y_batch = labels[j:j+100]
+        sess.run(train_step, feed_dict={x: x_batch,
+                                        y_target: y_batch}) # placeholder's none length is replaced by i:i+100 indexes
+
+        if i % 500 == 0:
+            train_accuracy = sess.run(accuracy, feed_dict={x: x_batch, y_target: y_batch})
+            print("step %d, training accuracy: %.3f" % (i, train_accuracy))
+
+            # calculate the summary and write.
+            summary = sess.run(merged, feed_dict={x: x_batch, y_target: y_batch})
+            summary_writer.add_summary(summary, i)
+        j = j + 100
+        if (j+100) > len(emb_array)/128:j=0
+
+    # for given x, y_target data set
+    # print("test accuracy: %g" % sess.run(accuracy, feed_dict={x: mnist.test.images, y_target: mnist.test.labels}))
+    sess.close()
+
+npzfile = np.load('/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_gallery_detect.npz')
+emb_array = npzfile['arr_0']
+labels = npzfile['arr_1']
+emb_array,labels = get_images_labels_pair(emb_array,labels)
+train_weight(emb_array,labels)

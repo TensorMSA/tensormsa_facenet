@@ -7,7 +7,7 @@ class Facenet_run():
         init_value.init_value.init(self)
 
         # object detect
-        align_main(self)
+        # align_main(self)
 
         # classifier Train
         classifier_main(self)

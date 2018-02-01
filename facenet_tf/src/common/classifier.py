@@ -98,22 +98,26 @@ def main(args):
             classifier_filename_exp = os.path.expanduser(args.classifier_filename)
 
             if (args.mode=='TRAIN'):
-                # Train classifier
-                print('Training classifier')
-                model = SVC(kernel='linear', probability=True)
-                # Mrege --->
-                if args.pair:
+                if args.weight:
                     emb_array, labels = utils.get_images_labels_pair(emb_array, labels)
-                    class_names = ['same', 'diff']
+                    utils.train_weight(emb_array, labels)
                 else:
-                    class_names = [cls.name.replace('_', ' ') for cls in dataset]
-                print('Model fit start')
-                model.fit(emb_array, labels)
+                    # Train classifier
+                    print('Training classifier')
+                    model = SVC(kernel='linear', probability=True)
+                    # Mrege --->
+                    if args.pair:
+                        emb_array, labels = utils.get_images_labels_pair(emb_array, labels)
+                        class_names = ['same', 'diff']
+                    else:
+                        class_names = [cls.name.replace('_', ' ') for cls in dataset]
+                    print('Model fit start')
+                    model.fit(emb_array, labels)
 
-                # Saving classifier model
-                with open(classifier_filename_exp, 'wb') as outfile:
-                    pickle.dump((model, class_names), outfile)
-                print('Saved classifier model to file "%s"' % classifier_filename_exp)
+                    # Saving classifier model
+                    with open(classifier_filename_exp, 'wb') as outfile:
+                        pickle.dump((model, class_names), outfile)
+                    print('Saved classifier model to file "%s"' % classifier_filename_exp)
                 
             elif (args.mode=='CLASSIFY'):
                 # Classify images
@@ -132,7 +136,7 @@ def main(args):
                     
                 accuracy = np.mean(np.equal(best_class_indices, labels))
                 print('Accuracy: %.3f' % accuracy)
-                
+
             
 def split_dataset(dataset, min_nrof_images_per_class, nrof_train_images_per_class):
     train_set = []
