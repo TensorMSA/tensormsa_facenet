@@ -187,11 +187,11 @@ class DataNodeImage():
         if self.pair:
             self.get_pair_file(self.gallery_filename+'.npz')
 
-            emb_sub = self.emb_array * emb
+            embv = self.emb_array * emb
             dist = []
             # for e in emb_sub:
             #     dist.append(np.sqrt(np.sum(np.square(e))))
-            predictions = self.model.predict_proba(emb_sub)
+            predictions = self.model.predict_proba(embv)
             best_class_indices = [self.emb_labels[np.argmax(predictions, axis=0)[0]]]
             best_class_probabilities = np.amax(predictions, axis=0)
 
