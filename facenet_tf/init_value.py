@@ -74,7 +74,7 @@ class init_value():
         self.viewImageSizeX =3
         self.viewImageSizeY =3
 
-        self.findlist = ['', '', '', '', '']  # 배열에 모두 동일한 값이 들어가야 인증이 됨.
+        self.findlist = ['', '', '']  # 배열에 모두 동일한 값이 들어가야 인증이 됨.
         self.boxes_min = 60 # detect min box size
         self.stand_box = [150, 60]# top left(width, height)
         self.prediction_max = 0.5 # 이 수치 이상 정합성을 보여야 인정 됨.
