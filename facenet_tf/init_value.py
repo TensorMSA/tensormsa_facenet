@@ -6,7 +6,7 @@ class init_value():
     def init(self):
         # Common
         self.project_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
-        self.gpu_memory_fraction = 0.8
+        self.gpu_memory_fraction = 0.1
         self.minsize = 20 # minimum size of face
         self.threshold = [0.6, 0.7, 0.7] # three steps's threshold
         self.factor = 0.9 # scale factor 0.709
@@ -49,7 +49,7 @@ class init_value():
         self.data_dir = self.output_dir
         self.mode = 'TRAIN'
         self.seed = 666
-        self.batch_size = 100
+        self.batch_size = 700
 
         # facenet_run
         self.debug = 'N' # 이미지 Log를 볼때 사용한다.
@@ -58,11 +58,15 @@ class init_value():
         self.log_dir = '/hoya_src_root/log_data/'
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)
+        self.gellery_new_dir = self.project_dir + 'data/gallery_new/'
+        if not os.path.exists(self.gellery_new_dir):
+            os.makedirs(self.gellery_new_dir)
+        self.pair_load_flag = True
         self.stand_box_color = (255, 255, 255)
         self.alert_color = (0, 0, 255)
         self.box_color = (120, 160, 230)
         self.text_color = (0, 255, 0)
-        self.prediction_cnt = 5  # 로그를 보여주는 개수를 정함
+        self.prediction_cnt = 7  # 로그를 보여주는 개수를 정함
         self.cropped_size = 25  # rotation use
 
         self.readImageSizeX = 1
@@ -73,7 +77,7 @@ class init_value():
         self.findlist = ['', '', '', '', '']  # 배열에 모두 동일한 값이 들어가야 인증이 됨.
         self.boxes_min = 60 # detect min box size
         self.stand_box = [150, 60]# top left(width, height)
-        self.prediction_max = 0.1 # 이 수치 이상 정합성을 보여야 인정 됨.
+        self.prediction_max = 0.5 # 이 수치 이상 정합성을 보여야 인정 됨.
 
         # feature train
         self.model_def = 'models.inception_resnet_v1'

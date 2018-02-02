@@ -24,6 +24,7 @@ import dlib
 from imutils.face_utils import rect_to_bb
 from imutils.face_utils import FaceAligner
 import facenet_tf.src.common.utils as utils
+import face_recognition
 
 class DataNodeImage():
     def realtime_run(self, runtype = 'real', dettype = None):
@@ -112,6 +113,8 @@ class DataNodeImage():
 
         if self.dettype == 'dlib':
             bounding_boxes = self.detector(gray, 2)
+        elif self.dettype == 'hog' or self.dettype == 'cnn':
+            bounding_boxes = face_recognition.face_locations(frame, number_of_times_to_upsample=0, model=self.dettype)
         else:
             bounding_boxes, _ = detect_face.detect_face(frame, self.minsize, self.pnet, self.rnet, self.onet,
                                                         self.threshold, self.factor)
@@ -121,7 +124,7 @@ class DataNodeImage():
 
         for bounding_box in bounding_boxes:
             if self.dettype == 'dlib':
-                det = rect_to_bb(bounding_box[0:4])
+                det = rect_to_bb(bounding_box)
             else:
                 det = np.squeeze(bounding_box[0:4])
 
@@ -134,6 +137,9 @@ class DataNodeImage():
             if self.dettype == 'dlib':
                 bb[2] += bb[0]
                 bb[3] += bb[1]
+            elif self.dettype == 'hog' or self.dettype == 'cnn':
+                bb[1], bb[2], bb[3], bb[0] = bounding_box
+
             if len(boxes) == 0:
                 boxes.append(bb)
             else:
@@ -158,13 +164,13 @@ class DataNodeImage():
             # self.save_image(frame)
             return frame
 
+        cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
+
         if self.rotation == True:
             rect = dlib.rectangle(left=int(boxes[0][0]), top=int(boxes[0][1]), right=int(boxes[0][2]), bottom=int(boxes[0][3]))
             cropped = self.fa.align(frame, gray, rect)[self.cropped_size:self.image_size, self.cropped_size:self.image_size, :]
         else:
             cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
-        # print(cropped)
-        cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
 
         aligned = misc.imresize(cropped, (self.image_size, self.image_size), interp='bilinear')
         prewhitened = facenet.prewhiten(aligned)
@@ -177,27 +183,31 @@ class DataNodeImage():
         emb = sess.run(self.embeddings, feed_dict=feed_dict)
 
         parray = []
+        log_cnt = 0
         if self.pair:
-            pairfile = np.load(self.gallery_filename+'.npz')
-            emb_array = pairfile['arr_0']
-            emb_labels = pairfile['arr_1']
-            self.class_names = pairfile['arr_2']
-            emb_sub = emb_array * emb
+            self.get_pair_file(self.gallery_filename+'.npz')
+
+            emb_sub = self.emb_array * emb
             dist = []
-            for e in emb_sub:
-                dist.append(np.sqrt(np.sum(np.square(e))))
+            # for e in emb_sub:
+            #     dist.append(np.sqrt(np.sum(np.square(e))))
             predictions = self.model.predict_proba(emb_sub)
-            best_class_indices = [emb_labels[np.argmax(predictions, axis=0)[0]]]
+            best_class_indices = [self.emb_labels[np.argmax(predictions, axis=0)[0]]]
             best_class_probabilities = np.amax(predictions, axis=0)
-            for pcnt in predictions[:,0].argsort()[::-1][:self.prediction_cnt]:
-                parray.append(str(predictions[pcnt][0])[:7] + '_' + self.class_names[emb_labels[pcnt]])
+
+            for pcnt in predictions[:,0].argsort()[::-1]:
+                if self.prediction_cnt > log_cnt and predictions[pcnt][0] < 1 and predictions[pcnt][0] > self.prediction_max :
+                    parray.append(str(predictions[pcnt][0])[:7] + '_' + self.class_names[self.emb_labels[pcnt]])
+                    log_cnt += 1
         else:
             predictions = self.model.predict_proba(emb)
             best_class_indices = np.argmax(predictions, axis=1)
             best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
 
-            for pcnt in predictions[0].argsort()[::-1][:self.prediction_cnt]:
-                parray.append(str(predictions[0][pcnt])[:7] + '_' + self.class_names[pcnt])
+            for pcnt in predictions[0].argsort()[::-1]:
+                if self.prediction_cnt > log_cnt and predictions[0][pcnt] < 1 and predictions[0][pcnt] > self.prediction_max:
+                    parray.append(str(predictions[0][pcnt])[:7] + '_' + self.class_names[pcnt])
+                    log_cnt += 1
         # print('----------------------------------------------------------------------------------')
         print(parray)
         # print('----------------------------------------------------------------------------------')
@@ -318,19 +328,17 @@ class DataNodeImage():
         for i in range(len(list)):
             list[i] = ''
 
+    def get_pair_file(self, filename):
+        if self.pair_load_flag:
+            pairfile = np.load(filename)
+            self.emb_array = pairfile['arr_0']
+            self.emb_labels = pairfile['arr_1']
+            self.class_names = pairfile['arr_2']
+            self.pair_load_flag = False
+
 if __name__ == '__main__':
     # test, real
-    # dlib, mtcnn
-    # rot, None
-    # print('==================================================')
-    # DataNodeImage().realtime_run('test', 'dlib')
-    # print('==================================================')
-    # DataNodeImage().realtime_run('test', 'dlib')
-    # print('==================================================')
-    # DataNodeImage().realtime_run('test', 'mtcnn')
-    # print('==================================================')
-    # DataNodeImage().realtime_run('test', 'mtcnn')
-
+    # dlib, mtcnn, hog, cnn
     print('==================================================')
-    DataNodeImage().realtime_run('real', 'mtcnn')
+    DataNodeImage().realtime_run('real', 'hog')
 
