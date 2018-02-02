@@ -105,8 +105,8 @@ def main(args):
                 else:
                     # Train classifier
                     print('Training classifier')
-                    # model = SVC(kernel='linear', probability=True)
-                    model = SGDClassifier()
+                    model = SVC(kernel='linear', probability=True)
+                    # model = SGDClassifier()
                     # Mrege --->
                     if args.pair:
                         if args.pair_same:
@@ -118,13 +118,13 @@ def main(args):
                         class_names = [cls.name.replace('_', ' ') for cls in dataset]
                     print('Model fit start... True count('+str(labels.count(0))+'), False count('+str(labels.count(1))+')')
 
-                    nrof_batches_per_epoch = int(math.ceil(1.0 * len(labels) / args.batch_size))
-                    for i in range(nrof_batches_per_epoch):
-                        start_index = i * args.batch_size
-                        end_index = min((i + 1) * args.batch_size, len(labels))
-                        print('Fit:'+str(i + 1) + '/' + str(nrof_batches_per_epoch))
-                        # model = model.fit(emb_array[start_index:end_index, :], labels[start_index:end_index])
-                        model.partial_fit(emb_array[start_index:end_index, :], labels[start_index:end_index])
+                    # nrof_batches_per_epoch = int(math.ceil(1.0 * len(labels) / args.batch_size))
+                    # for i in range(nrof_batches_per_epoch):
+                    #     start_index = i * args.batch_size
+                    #     end_index = min((i + 1) * args.batch_size, len(labels))
+                    #     print('Fit:'+str(i + 1) + '/' + str(nrof_batches_per_epoch))
+                    model = model.fit(emb_array, labels)
+                        # model.fit(emb_array[start_index:end_index, :], labels[start_index:end_index])
 
                     # Saving classifier model
                     with open(classifier_filename_exp, 'wb') as outfile:
