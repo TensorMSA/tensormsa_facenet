@@ -35,6 +35,7 @@ import argparse
 import facenet_tf.src.common.facenet as facenet
 import facenet_tf.src.common.utils as utils
 import matplotlib.pyplot as plt
+from sklearn.linear_model import SGDClassifier
 
 import os
 import sys
@@ -93,7 +94,7 @@ def main(args):
                 feed_dict = { images_placeholder:images, phase_train_placeholder:False }
                 emb_array[start_index:end_index,:] = sess.run(embeddings, feed_dict=feed_dict)
                 # Mrege --->
-                print(str(i+1)+'/'+str(nrof_batches_per_epoch))
+                print('EBM:'+str(i+1)+'/'+str(nrof_batches_per_epoch))
             
             classifier_filename_exp = os.path.expanduser(args.classifier_filename)
 
@@ -104,15 +105,26 @@ def main(args):
                 else:
                     # Train classifier
                     print('Training classifier')
-                    model = SVC(kernel='linear', probability=True)
+                    # model = SVC(kernel='linear', probability=True)
+                    model = SGDClassifier()
                     # Mrege --->
                     if args.pair:
-                        emb_array, labels = utils.get_images_labels_pair(emb_array, labels)
+                        if args.pair_same:
+                            emb_array, labels = utils.get_images_labels_pair_same(emb_array, labels, dataset)
+                        else:
+                            emb_array, labels = utils.get_images_labels_pair(emb_array, labels, dataset)
                         class_names = ['same', 'diff']
                     else:
                         class_names = [cls.name.replace('_', ' ') for cls in dataset]
-                    print('Model fit start... count('+str(len(labels))+')')
-                    model.fit(emb_array, labels)
+                    print('Model fit start... True count('+str(labels.count(0))+'), False count('+str(labels.count(1))+')')
+
+                    nrof_batches_per_epoch = int(math.ceil(1.0 * len(labels) / args.batch_size))
+                    for i in range(nrof_batches_per_epoch):
+                        start_index = i * args.batch_size
+                        end_index = min((i + 1) * args.batch_size, len(labels))
+                        print('Fit:'+str(i + 1) + '/' + str(nrof_batches_per_epoch))
+                        # model = model.fit(emb_array[start_index:end_index, :], labels[start_index:end_index])
+                        model.partial_fit(emb_array[start_index:end_index, :], labels[start_index:end_index])
 
                     # Saving classifier model
                     with open(classifier_filename_exp, 'wb') as outfile:

@@ -4,6 +4,7 @@ import tensorflow as tf
 import facenet_tf.src.common.facenet as facenet
 import matplotlib.pyplot as plt
 from keras.utils import np_utils
+import random, copy
 
 # common utils
 def face_rotation_predictor_download(self):
@@ -29,24 +30,60 @@ def face_rotation_predictor_download(self):
     detector = dlib.get_frontal_face_detector()
     return predictor, detector
 
-def get_images_labels_pair(emb_array, labels):
+def get_images_labels_pair(emb_array, labels, dataset):
     p = 0
     nrof_images = len(labels)
     emb_array_pair = np.zeros((nrof_images * nrof_images, emb_array.shape[1]))
     labels_pair = []
     for i in range(nrof_images):
         for j in range(nrof_images):
-            input = False
-
             if labels[i] == labels[j]:
                 labels_pair.append(0)
-                input = True
             else:
                 labels_pair.append(1)
-            if input:
                 embsub = emb_array[i] * emb_array[j]
                 emb_array_pair[p] = embsub
                 p += 1
+
+        print(str(i+1))
+    return emb_array_pair, labels_pair
+
+def get_images_labels_pair_same(emb_array, labels, dataset):
+    total_cnt = 0
+    pair_cnt = 0
+    for data in dataset:
+        total_cnt += len(data)*len(data)
+
+    nrof_images = len(labels)
+    random_cnt = round(total_cnt/nrof_images)
+    total_cnt += random_cnt*nrof_images
+    emb_array_pair = np.zeros((total_cnt, emb_array.shape[1]))
+
+    labels_pair = []
+    for i in range(nrof_images):
+        for j in range(nrof_images):
+            if labels[i] == labels[j]:
+                labels_pair.append(0)
+                embv = emb_array[i] * emb_array[j]
+                emb_array_pair[pair_cnt] = embv
+                pair_cnt += 1
+
+        diff_cnt = 0
+        emb_copy = copy.deepcopy(emb_array)
+        labels_copy = copy.deepcopy(labels)
+        while diff_cnt < random_cnt:
+            if labels[i] in labels_copy:
+                r_index = labels_copy.index(labels[i])
+            else:
+                r_index = random.choice(list(enumerate(labels_copy)))[0]
+                labels_pair.append(1)
+                embv = emb_array[i] * emb_copy[r_index]
+                emb_array_pair[pair_cnt] = embv
+                pair_cnt += 1
+                diff_cnt += 1
+
+            labels_copy[r_index:r_index + 1] = []
+            emb_copy = np.delete(emb_copy, r_index, 0)
 
         print(str(i+1))
     return emb_array_pair, labels_pair

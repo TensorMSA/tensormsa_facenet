@@ -32,6 +32,7 @@ class init_value():
 
         # Classifier
         self.pair = True
+        self.pair_same = True
         self.weight = False
         self.gallery_filename = self.model_dir + 'my_gallery_detect'
 
@@ -48,7 +49,7 @@ class init_value():
         self.data_dir = self.output_dir
         self.mode = 'TRAIN'
         self.seed = 666
-        self.batch_size = 900
+        self.batch_size = 100
 
         # facenet_run
         self.debug = 'N' # 이미지 Log를 볼때 사용한다.
