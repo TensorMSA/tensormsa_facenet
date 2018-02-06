@@ -31,9 +31,12 @@ class init_value():
         self.detect_multiple_faces = False
 
         # get pre Model Down
-        pre_model_name = '20170512-110547'
-        self.model = self.model_dir + pre_model_name+'/'+pre_model_name+'.pb'
-        download_and_extract.download_and_extract_file(pre_model_name, self.model_dir)
+        self.pre_model_name = '20170512-110547'
+        # self.model = self.model_dir + pre_model_name+'/'+pre_model_name+'.pb'
+        # download_and_extract.download_and_extract_file(pre_model_name, self.model_dir)
+
+        # self.pre_model_name = '20180206-022933'
+        self.model = self.model_dir + self.pre_model_name + '/' + self.pre_model_name + '.pb'
 
         self.down_land68_url = 'http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2'
         self.land68_file = 'shape_predictor_68_face_landmarks.dat.bz2'
@@ -43,7 +46,7 @@ class init_value():
         self.pair = True
         self.pair_same = True
         self.weight = False
-        self.gallery_filename = self.model_dir + pre_model_name + '_gallery'
+        self.gallery_filename = self.model_dir + self.pre_model_name + '_gallery'
 
         self.use_split_dataset = False
         self.data_dir = self.output_dir
@@ -78,7 +81,7 @@ class init_value():
         self.findlist = ['', '', '', '', '']  # 배열에 모두 동일한 값이 들어가야 인증이 됨.
         self.boxes_min = 70 # detect min box size
         self.stand_box = [50, 30]# top left(width, height)
-        self.prediction_max = 0.35 # 이 수치 이상 정합성을 보여야 인정 됨.
+        self.prediction_max = 0.1 # 이 수치 이상 정합성을 보여야 인정 됨.
 
         # feature train
         self.model_def = 'models.inception_resnet_v1'
