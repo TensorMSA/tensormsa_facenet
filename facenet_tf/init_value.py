@@ -6,7 +6,7 @@ class init_value():
     def init(self):
         # Common
         self.project_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
-        self.gpu_memory_fraction = 0.1
+        self.gpu_memory_fraction = 0.5
         self.minsize = 20 # minimum size of face
         self.threshold = [0.6, 0.7, 0.7] # three steps's threshold
         self.factor = 0.9 # scale factor 0.709
@@ -30,12 +30,6 @@ class init_value():
         self.random_order = False  # random.shuffle(dataset)
         self.detect_multiple_faces = False
 
-        # Classifier
-        self.pair = True
-        self.pair_same = True
-        self.weight = False
-        self.gallery_filename = self.model_dir + 'my_gallery_detect'
-
         # get pre Model Down
         pre_model_name = '20170512-110547'
         self.model = self.model_dir + pre_model_name+'/'+pre_model_name+'.pb'
@@ -45,14 +39,21 @@ class init_value():
         self.land68_file = 'shape_predictor_68_face_landmarks.dat.bz2'
         utils.face_rotation_predictor_download(self)
 
+        # Classifier
+        self.pair = True
+        self.pair_same = True
+        self.weight = False
+        self.gallery_filename = self.model_dir + pre_model_name + '_gallery'
+
         self.use_split_dataset = False
         self.data_dir = self.output_dir
         self.mode = 'TRAIN'
         self.seed = 666
-        self.batch_size = 700
+        self.batch_size = 70
 
         # facenet_run
         self.debug = 'N' # 이미지 Log를 볼때 사용한다.
+        self.pair_type = 'distance'  # pair, distance, svm
         self.eval_dir = self.project_dir + 'data/eval_data/'
         self.font_location = self.project_dir + 'font/ttf/NanumBarunGothic.ttf'
         self.log_dir = '/hoya_src_root/log_data/'
@@ -74,25 +75,25 @@ class init_value():
         self.viewImageSizeX =3
         self.viewImageSizeY =3
 
-        self.findlist = ['', '', '']  # 배열에 모두 동일한 값이 들어가야 인증이 됨.
-        self.boxes_min = 60 # detect min box size
-        self.stand_box = [150, 60]# top left(width, height)
-        self.prediction_max = 0.5 # 이 수치 이상 정합성을 보여야 인정 됨.
+        self.findlist = ['', '', '', '', '']  # 배열에 모두 동일한 값이 들어가야 인증이 됨.
+        self.boxes_min = 70 # detect min box size
+        self.stand_box = [50, 30]# top left(width, height)
+        self.prediction_max = 0.35 # 이 수치 이상 정합성을 보여야 인정 됨.
 
         # feature train
         self.model_def = 'models.inception_resnet_v1'
         self.logs_base_dir=self.model_dir
         self.models_base_dir=self.model_dir
         self.data_dir= self.output_dir    # '~/datasets/casia/casia_maxpy_mtcnnalign_182_160'
-        self.max_nrof_epochs=1
-        self.epoch_size=1
+        self.max_nrof_epochs=10
+        self.epoch_size=100
         self.embedding_size=128
         self.keep_probability=1.0
         self.weight_decay=0.0
         self.center_loss_factor=0.0
         self.center_loss_alfa=0.95
         self.optimizer='ADAGRAD'
-        self.learning_rate=0.1
+        self.learning_rate=0.01
         self.learning_rate_decay_epochs=100
         self.learning_rate_decay_factor=1.0
         self.moving_average_decay=0.9999

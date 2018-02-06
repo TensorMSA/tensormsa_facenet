@@ -32,73 +32,94 @@ class DataNodeImage():
         self.dettype = dettype
         init_value.init_value.init(self)
 
-        with tf.Graph().as_default():
-            gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=self.gpu_memory_fraction)
-            sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
-            with sess.as_default():
-                self.pnet, self.rnet, self.onet = detect_face.create_mtcnn(sess, None)
+        # GPU
+        # with tf.Graph().as_default():
+        #     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=self.gpu_memory_fraction)
+        #     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
+        #     with sess.as_default():
 
-                # Pre Train Load the model
-                print('Loading feature extraction model')
-                facenet.load_model(self.model)
+        # CPU
+        config = tf.ConfigProto( device_count={'GPU': 0} )
+        with tf.Session(config=config) as sess:
 
-                # Get input and output tensors
-                self.images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
-                self.embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
-                self.phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
+            self.pnet, self.rnet, self.onet = detect_face.create_mtcnn(sess, None)
 
-                # Model Load
-                classifier_filename_exp = os.path.expanduser(self.classifier_filename)
-                with open(classifier_filename_exp, 'rb') as infile:
-                    (self.model, self.class_names) = pickle.load(infile)
-                    print('load classifier file-> %s' % classifier_filename_exp)
-                    print('')
+            # Pre Train Load the model
+            print('Loading feature extraction model')
+            facenet.load_model(self.model)
 
-                self.logger = logging.getLogger('myapp')
-                hdlr = logging.FileHandler(self.log_dir + '/myface.log')
-                formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-                hdlr.setFormatter(formatter)
-                self.logger.addHandler(hdlr)
-                self.logger.setLevel(logging.WARNING)
+            # Get input and output tensors
+            self.images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
+            self.embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
+            self.phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
 
-                # dlib rotation
-                self.predictor = dlib.shape_predictor(self.model_dir + self.land68_file.replace('.bz2', ''))
-                self.detector = dlib.get_frontal_face_detector()
-                self.fa = FaceAligner(self.predictor, desiredFaceWidth=self.image_size+self.cropped_size)
+            # Model Load
+            classifier_filename_exp = os.path.expanduser(self.classifier_filename)
+            with open(classifier_filename_exp, 'rb') as infile:
+                (self.model, self.class_names) = pickle.load(infile)
+                print('load classifier file-> %s' % classifier_filename_exp)
+                print('')
 
-                if self.runtype == 'test':
+            self.logger = logging.getLogger('myapp')
+            hdlr = logging.FileHandler(self.log_dir + '/myface.log')
+            formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+            hdlr.setFormatter(formatter)
+            self.logger.addHandler(hdlr)
+            self.logger.setLevel(logging.WARNING)
 
-                    evaldirlist = sorted(os.listdir(self.eval_dir))
-                    for evalpath in evaldirlist:
-                        evalfile_path = self.eval_dir + '/' + evalpath
-                        evalfile_list = os.listdir(evalfile_path)
-                        test_data_files = []
-                        for evalfile in evalfile_list:
-                            test_data_files.append(evalfile_path + '/' + evalfile)
-                            # break
-                        print(evalfile_path)
-                        for test_file in test_data_files:
-                            frame = misc.imread(test_file)
-                            frame = self.getpredict(sess, frame)
-                            # plt.imshow(frame)
-                            # plt.show()
-                else:
-                    self.pretime = '99' # 1 second save
-                    video_capture = cv2.VideoCapture(0)
+            # dlib rotation
+            self.predictor = dlib.shape_predictor(self.model_dir + self.land68_file.replace('.bz2', ''))
+            self.detector = dlib.get_frontal_face_detector()
+            self.fa = FaceAligner(self.predictor, desiredFaceWidth=self.image_size+self.cropped_size)
 
-                    while True:
-                        ret, frame = video_capture.read()
-                        frame = cv2.flip( frame, 1 )
+            if self.runtype == 'test':
+                self.total_cnt = 0
+                self.total_t_cnt = 0
+                self.total_f_cnt = 0
+                self.total_u_cnt = 0
 
+                evaldirlist = sorted(os.listdir(self.eval_dir))
+                for evalpath in evaldirlist:
+                    self.evalpath = evalpath
+                    evalfile_path = self.eval_dir + self.evalpath
+                    evalfile_list = os.listdir(evalfile_path)
+                    test_data_files = []
+                    for evalfile in evalfile_list:
+                        test_data_files.append(evalfile_path + '/' + evalfile)
+                        # break
+                    print(evalfile_path)
+                    self.file_cnt = 0
+                    self.file_t_cnt = 0
+                    self.file_f_cnt = 0
+                    self.file_u_cnt = 0
+
+                    for test_file in test_data_files:
+                        frame = misc.imread(test_file)
                         frame = self.getpredict(sess, frame)
+                        # plt.imshow(frame)
+                        # plt.show()
 
-                        frame = cv2.resize(frame, (0, 0), fx=self.viewImageSizeX, fy=self.viewImageSizeY)
-                        cv2.imshow('Video', frame)
-                        if cv2.waitKey(1) & 0xFF == ord('q'):
-                            break
+                    print('Total:'+str(self.file_cnt)+ ', T:'+str(self.file_t_cnt)+', F:'+str(self.file_f_cnt)+', U:'+str(self.file_u_cnt))
+                print('-------------------------------------------------------------')
+                print('Total:'+str(self.total_cnt)+ ', T:'+str(self.total_t_cnt)+', F:'+str(self.total_f_cnt)+', U:'+str(self.total_u_cnt))
+                print('Total Percent : '+str(round(100-self.total_f_cnt/self.total_cnt*100,4)))
+            else:
+                self.pretime = '99' # 1 second save
+                video_capture = cv2.VideoCapture(0)
 
-                    video_capture.release()
-                    cv2.destroyAllWindows()
+                while True:
+                    ret, frame = video_capture.read()
+                    frame = cv2.flip( frame, 1 )
+
+                    frame = self.getpredict(sess, frame)
+
+                    frame = cv2.resize(frame, (0, 0), fx=self.viewImageSizeX, fy=self.viewImageSizeY)
+                    cv2.imshow('Video', frame)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+
+                video_capture.release()
+                cv2.destroyAllWindows()
 
     def getpredict(self, sess, frame):
         stand_box = [self.stand_box[0], self.stand_box[1]]
@@ -106,18 +127,21 @@ class DataNodeImage():
         stand_box.append(frame.shape[0] - self.stand_box[1])
         self.draw_border(frame, (stand_box[0], stand_box[1]), (stand_box[2], stand_box[3]), self.stand_box_color, 2, 10, 20)
 
-        saveframe = frame
-        frame = cv2.resize(frame, (0, 0), fx=self.readImageSizeX, fy=self.readImageSizeY)
-        img_size = np.asarray(frame.shape)[0:2]
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        try:
+            saveframe = frame
+            frame = cv2.resize(frame, (0, 0), fx=self.readImageSizeX, fy=self.readImageSizeY)
+            img_size = np.asarray(frame.shape)[0:2]
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        if self.dettype == 'dlib':
-            bounding_boxes = self.detector(gray, 2)
-        elif self.dettype == 'hog' or self.dettype == 'cnn':
-            bounding_boxes = face_recognition.face_locations(frame, number_of_times_to_upsample=0, model=self.dettype)
-        else:
-            bounding_boxes, _ = detect_face.detect_face(frame, self.minsize, self.pnet, self.rnet, self.onet,
-                                                        self.threshold, self.factor)
+            if self.dettype == 'dlib':
+                bounding_boxes = self.detector(gray, 2)
+            elif self.dettype == 'hog' or self.dettype == 'cnn':
+                bounding_boxes = face_recognition.face_locations(frame, number_of_times_to_upsample=0, model=self.dettype)
+            else:
+                bounding_boxes, _ = detect_face.detect_face(frame, self.minsize, self.pnet, self.rnet, self.onet,
+                                                            self.threshold, self.factor)
+        except:
+            return frame
 
         msgType = 0
         boxes = []
@@ -175,8 +199,6 @@ class DataNodeImage():
         aligned = misc.imresize(cropped, (self.image_size, self.image_size), interp='bilinear')
         prewhitened = facenet.prewhiten(aligned)
         prewhitened_reshape = prewhitened.reshape(-1, self.image_size, self.image_size, 3)
-        # prewhitened_reshape = np.zeros((1, self.image_size, self.image_size, 3))
-        # prewhitened_reshape[0, :, :, :] = prewhitened
 
         # Run forward pass to calculate embeddings
         feed_dict = {self.images_placeholder: prewhitened_reshape, self.phase_train_placeholder: False}
@@ -184,12 +206,12 @@ class DataNodeImage():
 
         parray = []
         log_cnt = 0
-        if self.pair:
+        if self.pair_type == 'pair':
             self.get_pair_file(self.gallery_filename+'.npz')
 
             embv = self.emb_array * emb
             dist = []
-            # for e in emb_sub:
+            # for e in embv:
             #     dist.append(np.sqrt(np.sum(np.square(e))))
             predictions = self.model.predict_proba(embv)
             best_class_indices = [self.emb_labels[np.argmax(predictions, axis=0)[0]]]
@@ -199,18 +221,47 @@ class DataNodeImage():
                 if self.prediction_cnt > log_cnt and predictions[pcnt][0] < 1 and predictions[pcnt][0] > self.prediction_max :
                     parray.append(str(predictions[pcnt][0])[:7] + '_' + self.class_names[self.emb_labels[pcnt]])
                     log_cnt += 1
+        elif self.pair_type == 'distance':
+            self.get_pair_file(self.gallery_filename + '.npz')
+            predictions = np.sqrt(np.sum(np.square(self.emb_array - emb), axis=1))
+            predictions = 1 - predictions
+            distmax = np.argmax(predictions)
+            best_class_indices = [self.emb_labels[distmax]]
+            best_class_probabilities = [predictions[distmax]]
+
+            for pcnt in predictions.argsort()[::-1]:
+                if self.prediction_cnt > log_cnt and predictions[pcnt] > self.prediction_max:
+                    parray.append(str(predictions[pcnt])[:7] + '_' + self.class_names[self.emb_labels[pcnt]])
+                    log_cnt += 1
         else:
             predictions = self.model.predict_proba(emb)
             best_class_indices = np.argmax(predictions, axis=1)
             best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
 
-            for pcnt in predictions[0].argsort()[::-1]:
+            for pcnt in predictions[0].argsort():
                 if self.prediction_cnt > log_cnt and predictions[0][pcnt] < 1 and predictions[0][pcnt] > self.prediction_max:
                     parray.append(str(predictions[0][pcnt])[:7] + '_' + self.class_names[pcnt])
                     log_cnt += 1
         # print('----------------------------------------------------------------------------------')
-        print(parray)
+        if len(parray) > 1:
+            print(parray)
         # print('----------------------------------------------------------------------------------')
+
+        if self.runtype == 'test':
+            self.total_cnt += 1
+            self.file_cnt += 1
+            if len(parray) > 1:
+                if self.evalpath == self.class_names[best_class_indices[0]].split()[0]:
+                    self.total_t_cnt += 1
+                    self.file_t_cnt += 1
+                else:
+                    self.total_f_cnt += 1
+                    self.file_f_cnt += 1
+            else:
+                self.total_u_cnt += 1
+                self.file_u_cnt += 1
+
+
         fcnt = 0
         for flist in self.findlist:
             pre = flist
@@ -257,6 +308,7 @@ class DataNodeImage():
                 result_names = ''
             else:
                 result_names = result + ' 님 인증 되었습니다.'
+                print(result_names)
             draw.text((stand_box[0], stand_box[1] - 30), result_names, self.text_color, font=font)
             frame = np.array(frame)
             self.reset_list(self.findlist)

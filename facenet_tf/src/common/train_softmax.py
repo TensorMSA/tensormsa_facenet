@@ -53,14 +53,15 @@ def main(args):
     network = importlib.import_module(args.model_def)
 
     subdir = datetime.strftime(datetime.now(), '%Y%m%d-%H%M%S')
-    # log_dir = os.path.join(os.path.expanduser(args.logs_base_dir), subdir)
+    log_dir = os.path.join(os.path.expanduser(args.logs_base_dir), subdir)
     # Mrege --->
-    log_dir = args.logs_base_dir
+    # log_dir = args.logs_base_dir
     if not os.path.isdir(log_dir):  # Create the log directory if it doesn't exist
         os.makedirs(log_dir)
-    # model_dir = os.path.join(os.path.expanduser(args.models_base_dir), subdir)
+
+    model_dir = os.path.join(os.path.expanduser(args.models_base_dir), subdir)
     # Mrege --->
-    model_dir = args.models_base_dir
+    # model_dir = args.models_base_dir
     if not os.path.isdir(model_dir):  # Create the model directory if it doesn't exist
         os.makedirs(model_dir)
 
