@@ -244,11 +244,16 @@ class DataNodeImage():
                     parray.append(str(predictions[0][pcnt])[:7] + '_' + self.class_names[pcnt])
                     log_cnt += 1
 
+        # print('----------------------------------------------------------------------------------')
+        if len(parray) > 1:
+            print(parray)
+            # print('----------------------------------------------------------------------------------')
+
         if self.runtype == 'test':
             self.total_cnt += 1
             self.file_cnt += 1
             if len(parray) > 1:
-                if self.evalpath == self.class_names[best_class_indices[0]].split()[0]:
+                if self.evalpath == self.class_names[best_class_indices[0]].replace(' ', '_'):
                     self.total_t_cnt += 1
                     self.file_t_cnt += 1
                 else:
@@ -258,63 +263,58 @@ class DataNodeImage():
             else:
                 self.total_u_cnt += 1
                 self.file_u_cnt += 1
+        else:
+            fcnt = 0
+            for flist in self.findlist:
+                pre = flist
+                cur = self.class_names[best_class_indices[0]]
+                preun = pre.lower().find('unknown')
+                curun = cur.lower().find('unknown')
+                if best_class_probabilities[0] > self.prediction_max:
+                    if curun > -1:
+                        cur = 'unknown'
 
-        # print('----------------------------------------------------------------------------------')
-        if len(parray) > 1:
-            print(parray)
-            # print('----------------------------------------------------------------------------------')
-
-        fcnt = 0
-        for flist in self.findlist:
-            pre = flist
-            cur = self.class_names[best_class_indices[0]]
-            preun = pre.lower().find('unknown')
-            curun = cur.lower().find('unknown')
-            if best_class_probabilities[0] > self.prediction_max:
-                if curun > -1:
-                    cur = 'unknown'
-
-                if pre == '' or (preun > -1 and curun == -1):
-                    self.findlist[fcnt] = cur
-                    break
-                elif pre != cur and curun == -1:
-                    self.logger.error('====================================================')
-                    self.logger.error(self.findlist)
-                    self.logger.error('Current Fail Predict : '+self.class_names[best_class_indices[0]]+'('+str(best_class_probabilities[0])[:5]+')')
-                    self.reset_list(self.findlist)
-            fcnt += 1
-
-        if '' not in self.findlist or self.findlist.count('unknown') == len(self.findlist):
-            # save
-            self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
-
-            resultFlag = 'Y'
-            result = self.class_names[best_class_indices[0]]
-            result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
-            if self.class_names[best_class_indices[0]].lower().find('unknown') > -1:
-                for rcnt in range(len(self.findlist)):
-                    if self.findlist[rcnt] == '':
-                        resultFlag = 'N'
+                    if pre == '' or (preun > -1 and curun == -1):
+                        self.findlist[fcnt] = cur
                         break
+                    elif pre != cur and curun == -1:
+                        self.logger.error('====================================================')
+                        self.logger.error(self.findlist)
+                        self.logger.error('Current Fail Predict : '+self.class_names[best_class_indices[0]]+'('+str(best_class_probabilities[0])[:5]+')')
+                        self.reset_list(self.findlist)
+                fcnt += 1
 
-                if resultFlag == 'Y':
-                    result = self.findlist[rcnt]
-                    result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
+            if '' not in self.findlist or self.findlist.count('unknown') == len(self.findlist):
+                # save
+                self.save_image(saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
 
-            frame = Image.fromarray(np.uint8(frame))
-            draw = ImageDraw.Draw(frame)
-            font = ImageFont.truetype(self.font_location, 16)
-            draw.text((boxes[0][0], boxes[0][1]-15), result_names, self.text_color, font=font)
-            font = ImageFont.truetype(self.font_location, 20)
-            if self.findlist.count('unknown') > 0:
-                result_names = ''
-            else:
-                result_names = result + ' 님 인증 되었습니다.'
-                print(result_names)
-            draw.text((stand_box[0], stand_box[1] - 30), result_names, self.text_color, font=font)
-            frame = np.array(frame)
-            self.reset_list(self.findlist)
-        # self.save_image(frame, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
+                resultFlag = 'Y'
+                result = self.class_names[best_class_indices[0]]
+                result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
+                if self.class_names[best_class_indices[0]].lower().find('unknown') > -1:
+                    for rcnt in range(len(self.findlist)):
+                        if self.findlist[rcnt] == '':
+                            resultFlag = 'N'
+                            break
+
+                    if resultFlag == 'Y':
+                        result = self.findlist[rcnt]
+                        result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
+
+                frame = Image.fromarray(np.uint8(frame))
+                draw = ImageDraw.Draw(frame)
+                font = ImageFont.truetype(self.font_location, 16)
+                draw.text((boxes[0][0], boxes[0][1]-15), result_names, self.text_color, font=font)
+                font = ImageFont.truetype(self.font_location, 20)
+                if self.findlist.count('unknown') > 0:
+                    result_names = ''
+                else:
+                    result_names = result + ' 님 인증 되었습니다.'
+                    print(result_names)
+                draw.text((stand_box[0], stand_box[1] - 30), result_names, self.text_color, font=font)
+                frame = np.array(frame)
+                self.reset_list(self.findlist)
+            # self.save_image(frame, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
         return frame
 
     def set_msg(self, msgType):
