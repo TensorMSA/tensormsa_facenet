@@ -94,6 +94,7 @@ class DataNodeImage():
                     self.file_u_cnt = 0
 
                     for test_file in test_data_files:
+                        self.testfile = test_file
                         frame = misc.imread(test_file)
                         frame = self.getpredict(sess, frame)
                         # plt.imshow(frame)
@@ -242,10 +243,6 @@ class DataNodeImage():
                 if self.prediction_cnt > log_cnt and predictions[0][pcnt] < 1 and predictions[0][pcnt] > self.prediction_max:
                     parray.append(str(predictions[0][pcnt])[:7] + '_' + self.class_names[pcnt])
                     log_cnt += 1
-        # print('----------------------------------------------------------------------------------')
-        if len(parray) > 1:
-            print(parray)
-        # print('----------------------------------------------------------------------------------')
 
         if self.runtype == 'test':
             self.total_cnt += 1
@@ -255,12 +252,17 @@ class DataNodeImage():
                     self.total_t_cnt += 1
                     self.file_t_cnt += 1
                 else:
+                    print('Fail filename:'+self.testfile)
                     self.total_f_cnt += 1
                     self.file_f_cnt += 1
             else:
                 self.total_u_cnt += 1
                 self.file_u_cnt += 1
 
+        # print('----------------------------------------------------------------------------------')
+        if len(parray) > 1:
+            print(parray)
+            # print('----------------------------------------------------------------------------------')
 
         fcnt = 0
         for flist in self.findlist:
