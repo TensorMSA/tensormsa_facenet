@@ -234,6 +234,31 @@ class DataNodeImage():
                 if self.prediction_cnt > log_cnt and predictions[pcnt] > self.prediction_max:
                     parray.append(str(predictions[pcnt])[:7] + '_' + self.class_names[self.emb_labels[pcnt]])
                     log_cnt += 1
+
+        elif self.weight:
+            pairfile = np.load(self.gallery_filename + '.npz')
+            emb_array = pairfile['arr_0']
+            emb_labels = pairfile['arr_1']
+            self.class_names = pairfile['arr_2']
+            emb_sub = emb_array * emb
+            with tf.Graph().as_default():
+                with tf.Session() as sess:
+                    # placeholder is used for feeding data.
+                    x = tf.placeholder("float", shape=[None, 128], name='x')
+
+                    # all the variables are allocated in GPU memory
+                    W1 = tf.Variable(tf.zeros([128, 2]), name='W1')
+                    b1 = tf.Variable(tf.zeros([2]), name='b1')
+                    y = tf.nn.softmax(tf.matmul(x, W1) + b1, name='y')
+                    saver = tf.train.Saver()
+                    saver.restore(sess, "/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_feature_weight/model.ckpt")
+                    predictions = sess.run(y, feed_dict={x: emb_sub})
+            best_class_indices = [emb_labels[np.argmax(predictions, axis=0)[0]]]
+            best_class_probabilities = np.amax(predictions, axis=0)
+
+            for pcnt in predictions[:,0].argsort()[::-1][:self.prediction_cnt]:
+                parray.append(str(predictions[pcnt][0])[:7] + '_' + self.class_names[emb_labels[pcnt]])
+
         else:
             predictions = self.model.predict_proba(emb)
             best_class_indices = np.argmax(predictions, axis=1)

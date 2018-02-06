@@ -195,10 +195,15 @@ def train_weight(emb_array, labels):
 
     # for given x, y_target data set
     # print("test accuracy: %g" % sess.run(accuracy, feed_dict={x: mnist.test.images, y_target: mnist.test.labels}))
+    saver = tf.train.Saver()
+    saver.save(sess, "/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_feature_weight/model.ckpt")
     sess.close()
-
+#     with tf.Session() as sess:
+#         saver.restore(sess, "/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_feature_weight/model.ckpt")
+#
 # npzfile = np.load('/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_gallery_detect.npz')
 # emb_array = npzfile['arr_0']
 # labels = npzfile['arr_1']
-# emb_array,labels = get_images_labels_pair(emb_array,labels)
+# dataset = facenet.get_dataset('/home/dev/tensormsa_facenet/facenet_tf/data/gallery_detect/')
+# emb_array,labels = get_images_labels_pair_same(emb_array,labels.tolist(),dataset)
 # train_weight(emb_array,labels)
