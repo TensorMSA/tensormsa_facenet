@@ -70,7 +70,7 @@ def main(args):
     minsize = args.minsize  # 20 # minimum size of face
     threshold = args.threshold  # [ 0.6, 0.7, 0.7 ]  # three steps's threshold
     factor = args.factor  # 0.709 # scale factor
-    predictor = dlib.shape_predictor(args.model_dir + args.land68_file.replace('.bz2', ''))
+    predictor = dlib.shape_predictor(args.pre_model_dir + args.predictor_68_face_landmarks.replace('.bz2', ''))
     detector = dlib.get_frontal_face_detector()
     fa = FaceAligner(predictor, desiredFaceWidth=args.image_size + args.cropped_size)
 

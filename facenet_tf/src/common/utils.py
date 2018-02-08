@@ -7,10 +7,8 @@ from keras.utils import np_utils
 import random, copy
 
 # common utils
-def face_rotation_predictor_download(self):
-    down_pred_url = self.down_land68_url
-    bz_pred_file = self.land68_file
-    down_pred_path = self.model_dir
+def shape_predictor_68_face_landmarks_download(down_pred_path, bz_pred_file):
+    down_pred_url = 'http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2'
     dt_pred_file = bz_pred_file.replace('.bz2', '')
 
     bz_pred_path = down_pred_path + bz_pred_file
@@ -198,6 +196,12 @@ def train_weight(emb_array, labels):
     saver = tf.train.Saver()
     saver.save(sess, "/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_feature_weight/model.ckpt")
     sess.close()
+
+def make_dir(dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    return dir
+
 #     with tf.Session() as sess:
 #         saver.restore(sess, "/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_feature_weight/model.ckpt")
 #
