@@ -27,12 +27,12 @@ class inference_run():
                 print('Calculating features for images')
 
                 paths = []
-                paths.append("000_0.png")
+                paths.append("289096.png")
                 images = facenet.load_data(paths, False, False, args.image_size)
                 feed_dict = {images_placeholder: images, phase_train_placeholder: False}
                 unknown_array = sess.run(embeddings, feed_dict=feed_dict)
 
-        npzfile = np.load('/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_gallery_detect.npz')
+        npzfile = np.load('/home/dev/tensormsa_facenet/facenet_tf/pre_model/20170512-110547_gallery_bak.npz')
         emb_array = npzfile['arr_0']
         labels = npzfile['arr_1']
         class_names = npzfile['arr_2']
@@ -55,7 +55,7 @@ class inference_run():
         best_class_probabilities = np.amax(results, axis=0)
         print(best_class_probabilities)
 
-        npzfile = np.load(args.model_dir+'my_gallery_detect.npz')
+        npzfile = np.load(args.model_dir+'20170512-110547_gallery_bak.npz')
         emb_array = npzfile['arr_0']
         labels = npzfile['arr_1']
         class_names = npzfile['arr_2']

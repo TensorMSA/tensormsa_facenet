@@ -5,6 +5,7 @@ import facenet_tf.src.common.facenet as facenet
 import matplotlib.pyplot as plt
 from keras.utils import np_utils
 import random, copy
+import math
 
 # common utils
 def shape_predictor_68_face_landmarks_download(down_pred_path, bz_pred_file):
@@ -86,6 +87,31 @@ def get_images_labels_pair_same(emb_array, labels, dataset):
         print(str(i+1))
     return emb_array_pair, labels_pair
 
+def get_images_labels_pair_same(emb_array, labels, dataset, class_names):
+    middle = len(labels) / 2
+    labels_pair = []
+    emb_array_pair = []
+    for data in dataset:
+        index = labels.index(class_names.index(data.name.replace('_',' ')))
+        end = index + len(data)
+        for i in range(index,end):
+            for j in range(index,end):
+                labels_pair.append(0)
+                embv = emb_array[i] * emb_array[j]
+                emb_array_pair.append(embv)
+            if index < middle:
+                for j in range(index + len(data),end + len(data)):
+                    labels_pair.append(1)
+                    embv = emb_array[i] * emb_array[j]
+                    emb_array_pair.append(embv)
+            else:
+                for j in range(0,len(data)):
+                    labels_pair.append(1)
+                    embv = emb_array[i] * emb_array[j]
+                    emb_array_pair.append(embv)
+            print(i)
+    return emb_array_pair, labels_pair
+
 def make_feature(args):
     with tf.Graph().as_default():
 
@@ -134,7 +160,7 @@ def make_feature(args):
 
             np.savez(args.gallery_filename, emb_array, labels, class_names)
 
-def train_weight(emb_array, labels):
+def train_weight(emb_array, labels, sess):
     # placeholder is used for feeding data.
     x = tf.placeholder("float", shape=[None, 128],name='x')
     y_target = tf.placeholder("float", shape=[None, 2],name='y_target')
@@ -164,9 +190,11 @@ def train_weight(emb_array, labels):
     merged = tf.summary.merge_all()
 
     # Create Session
-    sess = tf.Session(config=tf.ConfigProto(
-        gpu_options=tf.GPUOptions(allow_growth=True)))  # open a session which is a envrionment of computation graph.
+    # sess = tf.Session(config=tf.ConfigProto(
+    #     gpu_options=tf.GPUOptions(allow_growth=True)))  # open a session which is a envrionment of computation graph.
     sess.run(tf.global_variables_initializer())  # initialize the variables
+
+    saver = tf.train.Saver()
 
     summary_writer = tf.summary.FileWriter("/tmp/mlp", sess.graph)
 
@@ -186,28 +214,35 @@ def train_weight(emb_array, labels):
             print("step %d, training accuracy: %.3f" % (i, train_accuracy))
 
             # calculate the summary and write.
-            summary = sess.run(merged, feed_dict={x: x_batch, y_target: y_batch})
-            summary_writer.add_summary(summary, i)
+            # summary = sess.run(merged, feed_dict={x: x_batch, y_target: y_batch})
+            # summary_writer.add_summary(summary, i)
         j = j + 100
         if (j+100) > len(emb_array)/128:j=0
 
     # for given x, y_target data set
     # print("test accuracy: %g" % sess.run(accuracy, feed_dict={x: mnist.test.images, y_target: mnist.test.labels}))
-    saver = tf.train.Saver()
     saver.save(sess, "/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_feature_weight/model.ckpt")
-    sess.close()
+    return sess
 
 def make_dir(dir):
     if not os.path.exists(dir):
         os.makedirs(dir)
     return dir
 
-#     with tf.Session() as sess:
-#         saver.restore(sess, "/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_feature_weight/model.ckpt")
-#
-# npzfile = np.load('/home/dev/tensormsa_facenet/facenet_tf/pre_model/my_gallery_detect.npz')
+# npzfile = np.load('/home/dev/tensormsa_facenet/facenet_tf/pre_model/20170512-110547_gallery_bak.npz')
 # emb_array = npzfile['arr_0']
-# labels = npzfile['arr_1']
+# labels = npzfile['arr_1'].tolist()
+# class_names = npzfile['arr_2'].tolist()
 # dataset = facenet.get_dataset('/home/dev/tensormsa_facenet/facenet_tf/data/gallery_detect/')
-# emb_array,labels = get_images_labels_pair_same(emb_array,labels.tolist(),dataset)
-# train_weight(emb_array,labels)
+# end = 0
+# batch_size = 1000
+# sess = tf.Session(config=tf.ConfigProto(
+#         gpu_options=tf.GPUOptions(allow_growth=True)))  # open a session which is a envrionment of computation graph.
+#
+# for i in range(0,math.ceil(len(dataset) / batch_size)):
+#     if i + batch_size > len(dataset):end=len(dataset)
+#     else:end=i+batch_size
+#     dataset_part = dataset[i:end]
+#     emb_array1,labels1 = get_images_labels_pair_same(emb_array,labels,dataset_part,class_names)
+#     sess = train_weight(emb_array1,labels1,sess)
+# sess.close()
