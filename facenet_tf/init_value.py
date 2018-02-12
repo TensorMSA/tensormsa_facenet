@@ -5,10 +5,11 @@ import facenet_tf.src.common.utils as utils
 class init_value():
     def init(self):
         # Common
-        self.debug = False  # 이미지 Log를 볼때 사용한다.
+        self.debug = True  # 이미지 Log를 볼때 사용한다.
         self.gallery_load_flag = True
 
         self.rotation = False
+        self.detect_type = 'hog' # dlib, mtcnn, hog, cnn
         self.pair_type = 'svm_pair'  # svm, svm_pair, cnn_pair, distance
 
         self.project_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
@@ -23,16 +24,24 @@ class init_value():
         self.seed = 666
 
         # Make Directory
-        self.train_dir = utils.make_dir(self.project_dir + 'data/train_data/')
-        self.train_detect_dir = utils.make_dir(self.project_dir + 'data/train_detect/')
-        self.train_rotation_dir = utils.make_dir(self.project_dir + 'data/train_rotation/')
-        self.eval_dir = utils.make_dir(self.project_dir + 'data/eval_data/')
+        train_cnt = ''
+        eval_cnt = ''
+        gallery_cnt = ''
+        data_dir = 'data'
+        pre_model_dir = 'pre_model'
 
-        self.gellery_dir = utils.make_dir(self.project_dir + 'data/gallery_data/')
-        self.gallery_detect_dir = utils.make_dir(self.project_dir + 'data/gallery_detect/')
-        self.gallery_rotation_dir = utils.make_dir(self.project_dir + 'data/gallery_rotation/')
+        self.train_dir = utils.make_dir(self.project_dir + data_dir +'/train_data'+train_cnt+'/')
+        self.train_detect_dir = utils.make_dir(self.project_dir + data_dir +'/train_detect'+train_cnt+'/')
+        self.train_rotation_dir = utils.make_dir(self.project_dir + data_dir +'/train_rotation'+train_cnt+'/')
+        self.eval_dir = utils.make_dir(self.project_dir + data_dir +'/eval_data'+eval_cnt+'/')
+        self.eval_detect_dir = utils.make_dir(self.project_dir + data_dir +'/eval_detect'+eval_cnt+'/')
+        self.eval_rotation_dir = utils.make_dir(self.project_dir + data_dir +'/eval_rotation'+eval_cnt+'/')
 
-        self.pre_model_dir = utils.make_dir(self.project_dir + 'pre_model/')
+        self.gellery_dir = utils.make_dir(self.project_dir + 'data/gallery_data'+gallery_cnt+'/')
+        self.gallery_detect_dir = utils.make_dir(self.project_dir + 'data/gallery_detect'+gallery_cnt+'/')
+        self.gallery_rotation_dir = utils.make_dir(self.project_dir + 'data/gallery_rotation'+gallery_cnt+'/')
+
+        self.pre_model_dir = utils.make_dir(self.project_dir + pre_model_dir + '/')
 
         self.save_dir = utils.make_dir('/hoya_src_root/save_data/')
         self.log_dir = utils.make_dir('/hoya_src_root/log_data/')
@@ -51,8 +60,9 @@ class init_value():
         utils.shape_predictor_68_face_landmarks_download(self.pre_model_dir, self.predictor_68_face_landmarks)
 
         # file name
-        self.classifier_filename = self.pre_model_dir + 'my_classifier.pkl'
-        self.gallery_filename = self.pre_model_dir + self.feature_model_dir + '_gallery'
+        self.classifier_filename = self.pre_model_dir + 'my_classifier.pkl'+train_cnt
+        self.gallery_filename = self.pre_model_dir + self.feature_model_dir + '_gallery'+gallery_cnt
+        self.gallery_eval = self.pre_model_dir + self.feature_model_dir + '_gallery'+'_eval'+eval_cnt
         self.font_location = self.project_dir + 'font/ttf/NanumBarunGothic.ttf'
 
 

@@ -19,32 +19,198 @@ import face_recognition
 import matplotlib.pyplot as plt
 
 def getpredict(self, sess, frame):
-    stand_box = [self.stand_box[0], self.stand_box[1]]
-    stand_box.append(frame.shape[1] - self.stand_box[0])
-    stand_box.append(frame.shape[0] - self.stand_box[1])
-    frame = draw_border(frame, (stand_box[0], stand_box[1]), (stand_box[2], stand_box[3]), self.stand_box_color, 2, 10, 20)
+    saveframe = frame
+    frame = cv2.resize(frame, (0, 0), fx=self.readImageSizeX, fy=self.readImageSizeY)
 
-    try:
-        saveframe = frame
-        frame = cv2.resize(frame, (0, 0), fx=self.readImageSizeX, fy=self.readImageSizeY)
-        img_size = np.asarray(frame.shape)[0:2]
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    if self.gallery_load_flag:
+        pairfile = np.load(self.gallery_filename + '.npz')
+        self.emb_array = pairfile['arr_0']
+        self.emb_labels = pairfile['arr_1']
+        self.class_names = pairfile['arr_2']
 
-        if self.dettype == 'dlib':
-            bounding_boxes = self.detector(gray, 2)
-        elif self.dettype == 'hog' or self.dettype == 'cnn':
-            bounding_boxes = face_recognition.face_locations(frame, number_of_times_to_upsample=0, model=self.dettype)
-        else:
-            bounding_boxes, _ = detect_face.detect_face(frame, self.minsize, self.pnet, self.rnet, self.onet,
-                                                        self.threshold, self.factor)
-    except:
+        self.stand_box = [self.stand_box[0], self.stand_box[1]]
+        self.stand_box.append(frame.shape[1] - self.stand_box[0])
+        self.stand_box.append(frame.shape[0] - self.stand_box[1])
+
+        self.gallery_load_flag = False
+
+    frame = self.draw_border(frame, (self.stand_box[0], self.stand_box[1]), (self.stand_box[2], self.stand_box[3]),
+                             self.stand_box_color, 2, 10, 20)
+
+    aligned, boxes = get_boxes_frame(self, frame)
+
+    if len(boxes) == 0:
+        reset_list(self.findlist)
         return frame
 
+    # if len(bounding_boxes) > 1:
+    #     msgType = 3  # text = '한 명만 인식할 수 있습니다.'
+
     msgType = 0
+    if self.boxes_min > boxes[0][2] - boxes[0][0]:
+        msgType = 1  # text = '가까이 다가와 주세요.'
+    elif self.stand_box[0] > boxes[0][0] or self.stand_box[2] < boxes[0][2]:
+        msgType = 2  # text = '박스 안으로 움직여 주세요.'
+    elif self.stand_box[1] > boxes[0][1] or self.stand_box[3] < boxes[0][3]:
+        msgType = 2  # text = '박스 안으로 움직여 주세요.'
+
+    if msgType != 0 and self.runtype == 'real':
+        frame = draw_text(self, frame, set_predict_msg(msgType), self.stand_box)
+        # self.save_image(frame)
+        return frame
+
+    cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
+
+    if self.predict_flag:
+        self.predict_flag = False
+        return frame
+    else:
+        self.predict_flag = True
+
+    prewhitened = facenet.prewhiten(aligned)
+    prewhitened_reshape = prewhitened.reshape(-1, self.image_size, self.image_size, 3)
+
+    # Run forward pass to calculate embeddings
+    feed_dict = {self.images_placeholder: prewhitened_reshape, self.phase_train_placeholder: False}
+    self.emb = sess.run(self.embeddings, feed_dict=feed_dict)
+
+    best_class_indices, best_class_probabilities = get_predict_index(self)
+
+    fcnt = 0
+    for flist in self.findlist:
+        pre = flist
+        cur = self.class_names[best_class_indices[0]]
+        preun = pre.lower().find('unknown')
+        curun = cur.lower().find('unknown')
+        if best_class_probabilities[0] > self.prediction_max:
+            if curun > -1:
+                cur = 'unknown'
+
+            if pre == '' or (preun > -1 and curun == -1):
+                self.findlist[fcnt] = cur
+                break
+            elif pre != cur and curun == -1:
+                self.logger.error('====================================================')
+                self.logger.error(self.findlist)
+                self.logger.error('Current Fail Predict : ' + self.class_names[best_class_indices[0]] + '(' + str(
+                    best_class_probabilities[0])[:5] + ')')
+                reset_list(self.findlist)
+        fcnt += 1
+    # print(self.findlist)
+    if '' not in self.findlist or self.findlist.count('unknown') == len(self.findlist):
+        # save
+        save_image(self, saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
+
+        resultFlag = 'Y'
+        result = self.class_names[best_class_indices[0]]
+        result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
+        if self.class_names[best_class_indices[0]].lower().find('unknown') > -1:
+            for rcnt in range(len(self.findlist)):
+                if self.findlist[rcnt] == '':
+                    resultFlag = 'N'
+                    break
+
+            if resultFlag == 'Y':
+                result = self.findlist[rcnt]
+                result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
+
+        frame = Image.fromarray(np.uint8(frame))
+        draw = ImageDraw.Draw(frame)
+        font = ImageFont.truetype(self.font_location, self.name_font_size)
+        draw.text((boxes[0][0], boxes[0][1] - 15), result_names, self.text_color, font=font)
+        font = ImageFont.truetype(self.font_location, self.result_font_size)
+        if self.findlist.count('unknown') > 0:
+            result_names = ''
+        else:
+            result_names = result + ' 님 인증 되었습니다.'
+            print(result_names)
+        draw.text((self.stand_box[0], self.stand_box[1] - self.result_font_size), result_names, self.text_color, font=font)
+        frame = np.array(frame)
+        reset_list(self.findlist)
+        # self.save_image(frame, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
+    return frame
+
+def getpredict_test(self, sess):
+    pairfile = np.load(self.gallery_filename + '.npz')
+    self.emb_array = pairfile['arr_0']
+    self.emb_labels = pairfile['arr_1']
+    self.class_names = pairfile['arr_2']
+
+    pairfile_eval = np.load(self.gallery_eval + '.npz')
+    emb_array_eval = pairfile_eval['arr_0']
+    emb_labels_eval = pairfile_eval['arr_1']
+    class_names_eval = pairfile_eval['arr_2']
+
+    self.debug = False
+    emb_cnt = 0
+    eval_class = []
+    eval_true = []
+    eval_false = []
+    eval_unknown = []
+
+    for emb in emb_array_eval:
+        if emb_cnt%self.eval_log_cnt == 0 and emb_cnt != 0:
+            set_eval_log(eval_true, eval_false, eval_unknown)
+
+        self.emb = emb
+        emb_class = class_names_eval[emb_labels_eval[emb_cnt]]
+
+        if eval_class.count(emb_class) == 0:
+            eval_class.append(emb_class)
+            eval_true.append(0)
+            eval_false.append(0)
+            eval_unknown.append(0)
+
+        class_idx = eval_class.index(emb_class)
+
+        best_class_indices, best_class_probabilities = get_predict_index(self)
+
+        if emb_class == self.class_names[best_class_indices]:
+            eval_true[class_idx] += 1
+        elif self.class_names[best_class_indices][0].lower().count('unknown') > 0:
+            eval_unknown[class_idx] += 1
+        else:
+            eval_false[class_idx] += 1
+
+        emb_cnt += 1
+
+    set_eval_log(eval_true, eval_false, eval_unknown)
+    print('---------------------------------------------------------')
+    for cnt in range(len(eval_class)):
+        total_cnt = eval_true[cnt]+eval_false[cnt]+eval_unknown[cnt]
+        if total_cnt == 0:
+            continue
+        print(eval_class[cnt]+' Total:'+str(total_cnt)
+                +' T:'+str(eval_true[cnt])+' F:'+str(eval_false[cnt])+' U:'+str(eval_unknown[cnt])
+                + '     Fail:'+str(eval_false[cnt]/total_cnt*100)[:6])
+
+def set_eval_log(eval_true, eval_false, eval_unknown):
+    t = sum(eval_true)
+    f = sum(eval_false)
+    u = sum(eval_unknown)
+    total = t+f+u
+    if total == 0:
+        return
+
+    print('Eval Total:'+str(total)+' T:'+str(t)+' F:'+str(f)+' U:'+str(u)
+          + '     Fail:' + str(f / total * 100)[:6])
+
+def get_boxes_frame(self, frame):
     boxes = []
+    img_size = np.asarray(frame.shape)[0:2]
+    if len(img_size) == 0:
+        return frame, boxes
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    if self.detect_type == 'dlib':
+        bounding_boxes = self.detector(gray, 2)
+    elif self.detect_type == 'hog' or self.detect_type == 'cnn':
+        bounding_boxes = face_recognition.face_locations(frame, number_of_times_to_upsample=0, model=self.detect_type)
+    elif self.detect_type == 'mtcnn':
+        bounding_boxes, _ = detect_face.detect_face(frame, self.minsize, self.pnet, self.rnet, self.onet,
+                                                    self.threshold, self.factor)
 
     for bounding_box in bounding_boxes:
-        if self.dettype == 'dlib':
+        if self.detect_type == 'dlib':
             det = rect_to_bb(bounding_box)
         else:
             det = np.squeeze(bounding_box[0:4])
@@ -55,10 +221,10 @@ def getpredict(self, sess, frame):
         bb[2] = np.minimum(det[2] + self.margin / 2, img_size[1])
         bb[3] = np.minimum(det[3] + self.margin / 2, img_size[0])
 
-        if self.dettype == 'dlib':
+        if self.detect_type == 'dlib':
             bb[2] += bb[0]
             bb[3] += bb[1]
-        elif self.dettype == 'hog' or self.dettype == 'cnn':
+        elif self.detect_type == 'hog' or self.detect_type == 'cnn':
             bb[1], bb[2], bb[3], bb[0] = bounding_box
 
         if len(boxes) == 0:
@@ -67,48 +233,24 @@ def getpredict(self, sess, frame):
             if boxes[0][2] - boxes[0][0] < bb[2] - bb[0]:
                 boxes[0] = bb
 
-    if len(boxes) == 0:
-        reset_list(self.findlist)
-        return frame
+    if len(boxes) > 0:
+        if self.rotation == True:
+            rect = dlib.rectangle(left=int(boxes[0][0]), top=int(boxes[0][1]), right=int(boxes[0][2]),
+                                  bottom=int(boxes[0][3]))
+            cropped = self.fa.align(frame, gray, rect)[self.cropped_size:self.image_size, self.cropped_size:self.image_size,:]
+        else:
+            cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
 
-    # if len(bounding_boxes) > 1:
-    #     msgType = 3  # text = '한 명만 인식할 수 있습니다.'
+        frame = misc.imresize(cropped, (self.image_size, self.image_size), interp='bilinear')
 
-    if msgType == 0:
-        if self.boxes_min > boxes[0][2] - boxes[0][0]:
-            msgType = 1  # text = '가까이 다가와 주세요.'
-        elif stand_box[0] > boxes[0][0] or stand_box[2] < boxes[0][2] or stand_box[1] > boxes[0][1] or stand_box[3] < \
-                boxes[0][3]:
-            msgType = 2  # text = '박스 안으로 움직여 주세요.'
+    return frame, boxes
 
-    if msgType != 0 and self.runtype == 'real':
-        frame = self.draw_text(frame, set_predict_msg(msgType), stand_box)
-        # self.save_image(frame)
-        return frame
-
-    cv2.rectangle(frame, (boxes[0][0], boxes[0][1]), (boxes[0][2], boxes[0][3]), self.box_color, 1)
-
-    if self.rotation == True:
-        rect = dlib.rectangle(left=int(boxes[0][0]), top=int(boxes[0][1]), right=int(boxes[0][2]),
-                              bottom=int(boxes[0][3]))
-        cropped = self.fa.align(frame, gray, rect)[self.cropped_size:self.image_size, self.cropped_size:self.image_size,
-                  :]
-    else:
-        cropped = frame[boxes[0][1]:boxes[0][3], boxes[0][0]:boxes[0][2], :]
-
-    aligned = misc.imresize(cropped, (self.image_size, self.image_size), interp='bilinear')
-    prewhitened = facenet.prewhiten(aligned)
-    prewhitened_reshape = prewhitened.reshape(-1, self.image_size, self.image_size, 3)
-
-    # Run forward pass to calculate embeddings
-    feed_dict = {self.images_placeholder: prewhitened_reshape, self.phase_train_placeholder: False}
-    emb = sess.run(self.embeddings, feed_dict=feed_dict)
-
+def get_predict_index(self):
     parray = []
     log_cnt = 0
 
     if self.pair_type == 'svm':
-        predictions = self.model.predict_proba(emb)
+        predictions = self.model.predict_proba(self.emb)
         best_class_indices = np.argmax(predictions, axis=1)
         best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
 
@@ -118,7 +260,7 @@ def getpredict(self, sess, frame):
                 parray.append(str(predictions[0][pcnt])[:7] + '_' + self.class_names[pcnt])
                 log_cnt += 1
     elif self.pair_type == 'svm_pair':
-        embv = self.emb_array * emb
+        embv = self.emb_array * self.emb
         dist = []
         # for e in embv:
         #     dist.append(np.sqrt(np.sum(np.square(e))))
@@ -132,7 +274,7 @@ def getpredict(self, sess, frame):
                 parray.append(str(predictions[pcnt][0])[:7] + '_' + self.class_names[self.emb_labels[pcnt]])
                 log_cnt += 1
     elif self.pair_type == 'distance':
-        predictions = np.sqrt(np.sum(np.square(self.emb_array - emb), axis=1))
+        predictions = np.sqrt(np.sum(np.square(self.emb_array - self.emb), axis=1))
         predictions = 1 - predictions
         distmax = np.argmax(predictions)
         best_class_indices = [self.emb_labels[distmax]]
@@ -144,7 +286,7 @@ def getpredict(self, sess, frame):
                 log_cnt += 1
 
     elif self.pair_type == 'cnn_pair':
-        emb_sub = self.emb_array * emb
+        emb_sub = self.emb_array * self.emb
         with tf.Graph().as_default():
             with tf.Session() as sess:
                 # placeholder is used for feeding data.
@@ -164,79 +306,10 @@ def getpredict(self, sess, frame):
             parray.append(str(predictions[pcnt][0])[:7] + '_' + self.class_names[self.emb_labels[pcnt]])
 
     # print('----------------------------------------------------------------------------------')
-    if len(parray) > 1:
+    if len(parray) > 1 and self.debug:
         print(parray)
-        # print('----------------------------------------------------------------------------------')
-
-    if self.runtype == 'test':
-        self.total_cnt += 1
-        self.file_cnt += 1
-        if len(parray) > 1:
-            if self.evalpath == self.class_names[best_class_indices[0]].replace(' ', '_'):
-                self.total_t_cnt += 1
-                self.file_t_cnt += 1
-            else:
-                print('Fail filename:' + self.testfile)
-                self.total_f_cnt += 1
-                self.file_f_cnt += 1
-        else:
-            self.total_u_cnt += 1
-            self.file_u_cnt += 1
-        return frame, self
-    else:
-        fcnt = 0
-        for flist in self.findlist:
-            pre = flist
-            cur = self.class_names[best_class_indices[0]]
-            preun = pre.lower().find('unknown')
-            curun = cur.lower().find('unknown')
-            if best_class_probabilities[0] > self.prediction_max:
-                if curun > -1:
-                    cur = 'unknown'
-
-                if pre == '' or (preun > -1 and curun == -1):
-                    self.findlist[fcnt] = cur
-                    break
-                elif pre != cur and curun == -1:
-                    self.logger.error('====================================================')
-                    self.logger.error(self.findlist)
-                    self.logger.error('Current Fail Predict : ' + self.class_names[best_class_indices[0]] + '(' + str(
-                        best_class_probabilities[0])[:5] + ')')
-                    reset_list(self.findlist)
-            fcnt += 1
-
-        if '' not in self.findlist or self.findlist.count('unknown') == len(self.findlist):
-            # save
-            save_image(self, saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
-
-            resultFlag = 'Y'
-            result = self.class_names[best_class_indices[0]]
-            result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
-            if self.class_names[best_class_indices[0]].lower().find('unknown') > -1:
-                for rcnt in range(len(self.findlist)):
-                    if self.findlist[rcnt] == '':
-                        resultFlag = 'N'
-                        break
-
-                if resultFlag == 'Y':
-                    result = self.findlist[rcnt]
-                    result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
-
-            frame = Image.fromarray(np.uint8(frame))
-            draw = ImageDraw.Draw(frame)
-            font = ImageFont.truetype(self.font_location, 16)
-            draw.text((boxes[0][0], boxes[0][1] - 15), result_names, self.text_color, font=font)
-            font = ImageFont.truetype(self.font_location, 20)
-            if self.findlist.count('unknown') > 0:
-                result_names = ''
-            else:
-                result_names = result + ' 님 인증 되었습니다.'
-                print(result_names)
-            draw.text((stand_box[0], stand_box[1] - 30), result_names, self.text_color, font=font)
-            frame = np.array(frame)
-            reset_list(self.findlist)
-            # self.save_image(frame, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
-    return frame
+    # print('----------------------------------------------------------------------------------')
+    return best_class_indices, best_class_probabilities
 
 def set_predict_msg(msgType):
     if msgType == 1:
@@ -248,37 +321,11 @@ def set_predict_msg(msgType):
 
     return text
 
-def draw_border(img, pt1, pt2, color, thickness, r, d):
-    x1, y1 = pt1
-    x2, y2 = pt2
-
-    # Top left
-    cv2.line(img, (x1 + r, y1), (x1 + r + d, y1), color, thickness)
-    cv2.line(img, (x1, y1 + r), (x1, y1 + r + d), color, thickness)
-    cv2.ellipse(img, (x1 + r, y1 + r), (r, r), 180, 0, 90, color, thickness)
-
-    # Top right
-    cv2.line(img, (x2 - r, y1), (x2 - r - d, y1), color, thickness)
-    cv2.line(img, (x2, y1 + r), (x2, y1 + r + d), color, thickness)
-    cv2.ellipse(img, (x2 - r, y1 + r), (r, r), 270, 0, 90, color, thickness)
-
-    # Bottom left
-    cv2.line(img, (x1 + r, y2), (x1 + r + d, y2), color, thickness)
-    cv2.line(img, (x1, y2 - r), (x1, y2 - r - d), color, thickness)
-    cv2.ellipse(img, (x1 + r, y2 - r), (r, r), 90, 0, 90, color, thickness)
-
-    # Bottom right
-    cv2.line(img, (x2 - r, y2), (x2 - r - d, y2), color, thickness)
-    cv2.line(img, (x2, y2 - r), (x2, y2 - r - d), color, thickness)
-    cv2.ellipse(img, (x2 - r, y2 - r), (r, r), 0, 0, 90, color, thickness)
-
-    return img
-
 def draw_text(self, frame, text, boxes):
     frame = Image.fromarray(np.uint8(frame))
     draw = ImageDraw.Draw(frame)
-    font = ImageFont.truetype(self.font_location, 32)
-    draw.text((boxes[0], boxes[1] - 30), text, self.alert_color, font=font)
+    font = ImageFont.truetype(self.font_location, self.alert_font_size)
+    draw.text((boxes[0], boxes[1] - self.alert_font_size), text, self.alert_color, font=font)
     frame = np.array(frame)
     return frame
 

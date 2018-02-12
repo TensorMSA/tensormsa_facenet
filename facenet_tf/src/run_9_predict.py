@@ -27,30 +27,34 @@ import facenet_tf.src.common.utils as utils
 import face_recognition
 import facenet_tf.src.common.predict as predict
 
-class FaceRecognition():
-    def _init_value(self):
-        self.runtype = 'test' # test, real
-        self.dettype = 'hog' # dlib, mtcnn, hog, cnn
+class FaceRecognitionRun():
+    def _init_value(self, runtype):
+        self.runtype = runtype # test, real
 
-        self.readImageSizeX = 1
-        self.readImageSizeY = 1
-        self.viewImageSizeX = 3
-        self.viewImageSizeY = 3
+        self.readImageSizeX = 0.5
+        self.readImageSizeY = 0.5
+        self.viewImageSizeX = 2
+        self.viewImageSizeY = 2
 
-        self.findlist = ['', '', '', '', '']  # 배열에 모두 동일한 값이 들어가야 인증이 됨.
+        self.findlist = ['', '', '']  # 배열에 모두 동일한 값이 들어가야 인증이 됨.
         self.boxes_min = 70  # detect min box size
-        self.stand_box = [50, 30]  # top left(width, height)
+        self.stand_box = [30, 20]  # top left(width, height)
         self.prediction_max = 0.1  # 이 수치 이상 정합성을 보여야 인정 됨.
         self.prediction_cnt = 6  # 로그를 보여주는 개수를 정함
+        self.eval_log_cnt = 100 # 평가중 몇번마다 로그를 찍을지 결정을 한다.
 
         self.stand_box_color = (255, 255, 255)
         self.alert_color = (0, 0, 255)
         self.box_color = (120, 160, 230)
         self.text_color = (0, 255, 0)
 
-    def realtime_run(self):
+        self.name_font_size = 16
+        self.result_font_size = 18
+        self.alert_font_size = 18
+
+    def realtime_run(self, runtype = 'real'):
         init_value.init_value.init(self)
-        self._init_value()
+        self._init_value(runtype)
 
         # GPU
         # with tf.Graph().as_default():
@@ -93,49 +97,14 @@ class FaceRecognition():
             self.fa = FaceAligner(self.predictor, desiredFaceWidth=self.image_size+self.cropped_size)
 
             if self.runtype == 'test':
-                self.total_cnt = 0
-                self.total_t_cnt = 0
-                self.total_f_cnt = 0
-                self.total_u_cnt = 0
-
-                evaldirlist = sorted(os.listdir(self.eval_dir))
-                for evalpath in evaldirlist:
-                    self.evalpath = evalpath
-                    evalfile_path = self.eval_dir + self.evalpath
-                    evalfile_list = os.listdir(evalfile_path)
-                    test_data_files = []
-                    for evalfile in evalfile_list:
-                        test_data_files.append(evalfile_path + '/' + evalfile)
-                        # break
-                    print(evalfile_path)
-                    self.file_cnt = 0
-                    self.file_t_cnt = 0
-                    self.file_f_cnt = 0
-                    self.file_u_cnt = 0
-
-                    for test_file in test_data_files:
-                        self.testfile = test_file
-                        frame = misc.imread(test_file)
-                        self.get_pair_file(self.gallery_filename + '.npz')
-                        try:
-                            frame, self = predict.getpredict(self, sess, frame)
-                            # plt.imshow(frame)
-                            # plt.show()
-                        except:
-                            None
-
-                    print('Total:'+str(self.file_cnt)+ ', T:'+str(self.file_t_cnt)+', F:'+str(self.file_f_cnt)+', U:'+str(self.file_u_cnt))
-                print('-------------------------------------------------------------')
-                print('Total:'+str(self.total_cnt)+ ', T:'+str(self.total_t_cnt)+', F:'+str(self.total_f_cnt)+', U:'+str(self.total_u_cnt))
-                print('Total Percent : '+str(round(100-self.total_f_cnt/self.total_cnt*100,4)))
+                predict.getpredict_test(self, sess)
             else:
                 self.pretime = '99' # 1 second save
                 video_capture = cv2.VideoCapture(0)
-
+                self.predict_flag = True
                 while True:
                     ret, frame = video_capture.read()
-                    frame = cv2.flip( frame, 1 )
-                    self.get_pair_file(self.gallery_filename + '.npz')
+                    frame = cv2.flip(frame, 1)
 
                     frame = predict.getpredict(self, sess, frame)
 
@@ -147,15 +116,33 @@ class FaceRecognition():
                 video_capture.release()
                 cv2.destroyAllWindows()
 
-    def get_pair_file(self, filename):
-        if self.gallery_load_flag:
-            pairfile = np.load(filename)
-            self.emb_array = pairfile['arr_0']
-            self.emb_labels = pairfile['arr_1']
-            self.class_names = pairfile['arr_2']
-            self.pair_load_flag = False
+    def draw_border(self, img, pt1, pt2, color, thickness, r, d):
+        x1, y1 = pt1
+        x2, y2 = pt2
+
+        # Top left
+        cv2.line(img, (x1 + r, y1), (x1 + r + d, y1), color, thickness)
+        cv2.line(img, (x1, y1 + r), (x1, y1 + r + d), color, thickness)
+        cv2.ellipse(img, (x1 + r, y1 + r), (r, r), 180, 0, 90, color, thickness)
+
+        # Top right
+        cv2.line(img, (x2 - r, y1), (x2 - r - d, y1), color, thickness)
+        cv2.line(img, (x2, y1 + r), (x2, y1 + r + d), color, thickness)
+        cv2.ellipse(img, (x2 - r, y1 + r), (r, r), 270, 0, 90, color, thickness)
+
+        # Bottom left
+        cv2.line(img, (x1 + r, y2), (x1 + r + d, y2), color, thickness)
+        cv2.line(img, (x1, y2 - r), (x1, y2 - r - d), color, thickness)
+        cv2.ellipse(img, (x1 + r, y2 - r), (r, r), 90, 0, 90, color, thickness)
+
+        # Bottom right
+        cv2.line(img, (x2 - r, y2), (x2 - r - d, y2), color, thickness)
+        cv2.line(img, (x2, y2 - r), (x2, y2 - r - d), color, thickness)
+        cv2.ellipse(img, (x2 - r, y2 - r), (r, r), 0, 0, 90, color, thickness)
+
+        return img
 
 if __name__ == '__main__':
     print('==================================================')
-    FaceRecognition().realtime_run()
+    FaceRecognitionRun().realtime_run()
 
