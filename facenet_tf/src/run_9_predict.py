@@ -37,7 +37,7 @@ class FaceRecognitionRun():
         self.viewImageSizeY = 2
 
         self.findlist = ['', '', '']  # 배열에 모두 동일한 값이 들어가야 인증이 됨.
-        self.boxes_min = 70  # detect min box size
+        self.boxes_min = 50  # detect min box size
         self.stand_box = [30, 20]  # top left(width, height)
         self.prediction_max = 0.1  # 이 수치 이상 정합성을 보여야 인정 됨.
         self.prediction_cnt = 6  # 로그를 보여주는 개수를 정함
@@ -56,65 +56,69 @@ class FaceRecognitionRun():
         init_value.init_value.init(self)
         self._init_value(runtype)
 
-        # GPU
-        # with tf.Graph().as_default():
-        #     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=self.gpu_memory_fraction)
-        #     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
-        #     with sess.as_default():
+        if runtype == 'test': # GPU
+            with tf.Graph().as_default():
+                gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=self.gpu_memory_fraction)
+                sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
+                with sess.as_default():
+                    self.realtime_run_sess(sess)
+        else: # CPU
+            config = tf.ConfigProto( device_count={'GPU': 0} )
+            with tf.Session(config=config) as sess:
+                self.realtime_run_sess(sess)
 
-        # CPU
-        config = tf.ConfigProto( device_count={'GPU': 0} )
-        with tf.Session(config=config) as sess:
+    def realtime_run_sess(self, sess):
+        self.pnet, self.rnet, self.onet = detect_face.create_mtcnn(sess, None)
 
-            self.pnet, self.rnet, self.onet = detect_face.create_mtcnn(sess, None)
+        # Pre Train Load the model
+        print('Loading feature extraction model')
+        facenet.load_model(self.feature_model)
 
-            # Pre Train Load the model
-            print('Loading feature extraction model')
-            facenet.load_model(self.feature_model)
+        # Get input and output tensors
+        self.images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
+        self.embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
+        self.phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
 
-            # Get input and output tensors
-            self.images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
-            self.embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
-            self.phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
-
-            # Model Load
+        # Model Load
+        if self.pair_type != 'distance':
             classifier_filename_exp = os.path.expanduser(self.classifier_filename)
             with open(classifier_filename_exp, 'rb') as infile:
                 (self.model, self.class_names) = pickle.load(infile)
                 print('load classifier file-> %s' % classifier_filename_exp)
                 print('')
 
-            self.logger = logging.getLogger('myapp')
-            hdlr = logging.FileHandler(self.log_dir + '/myface.log')
-            formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-            hdlr.setFormatter(formatter)
-            self.logger.addHandler(hdlr)
-            self.logger.setLevel(logging.WARNING)
+        self.logger = logging.getLogger('myapp')
+        hdlr = logging.FileHandler(self.log_dir + '/myface.log')
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        hdlr.setFormatter(formatter)
+        self.logger.addHandler(hdlr)
+        self.logger.setLevel(logging.WARNING)
 
-            # dlib rotation
-            self.predictor = dlib.shape_predictor(self.pre_model_dir + self.predictor_68_face_landmarks.replace('.bz2', ''))
-            self.detector = dlib.get_frontal_face_detector()
-            self.fa = FaceAligner(self.predictor, desiredFaceWidth=self.image_size+self.cropped_size)
+        # dlib rotation
+        self.predictor = dlib.shape_predictor(self.pre_model_dir + self.predictor_68_face_landmarks.replace('.bz2', ''))
+        self.detector = dlib.get_frontal_face_detector()
+        self.fa = FaceAligner(self.predictor, desiredFaceWidth=self.image_size + self.cropped_size)
 
-            if self.runtype == 'test':
-                predict.getpredict_test(self, sess)
-            else:
-                self.pretime = '99' # 1 second save
-                video_capture = cv2.VideoCapture(0)
-                self.predict_flag = True
-                while True:
-                    ret, frame = video_capture.read()
-                    frame = cv2.flip(frame, 1)
+        if self.runtype == 'test':
+            predict.getpredict_test(self, sess)
+        else:
+            self.pretime = '99'  # 1 second save
+            video_capture = cv2.VideoCapture(0)
+            self.predict_flag = True
+            while True:
+                ret, frame = video_capture.read()
+                frame = cv2.flip(frame, 1)
 
-                    frame = predict.getpredict(self, sess, frame)
+                frame = predict.getpredict(self, sess, frame)
 
-                    frame = cv2.resize(frame, (0, 0), fx=self.viewImageSizeX, fy=self.viewImageSizeY)
-                    cv2.imshow('Video', frame)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        break
+                frame = cv2.resize(frame, (0, 0), fx=self.viewImageSizeX, fy=self.viewImageSizeY)
+                cv2.imshow('Video', frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
 
-                video_capture.release()
-                cv2.destroyAllWindows()
+            video_capture.release()
+            cv2.destroyAllWindows()
+
 
     def draw_border(self, img, pt1, pt2, color, thickness, r, d):
         x1, y1 = pt1

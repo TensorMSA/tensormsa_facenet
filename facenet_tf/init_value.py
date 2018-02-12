@@ -10,7 +10,7 @@ class init_value():
 
         self.rotation = False
         self.detect_type = 'hog' # dlib, mtcnn, hog, cnn
-        self.pair_type = 'svm_pair'  # svm, svm_pair, cnn_pair, distance
+        self.pair_type = 'distance'  # svm, svm_pair, cnn_pair, distance
 
         self.project_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
         self.gpu_memory_fraction = 0.5
@@ -45,7 +45,8 @@ class init_value():
 
         self.save_dir = utils.make_dir('/hoya_src_root/save_data/')
         self.log_dir = utils.make_dir('/hoya_src_root/log_data/')
-        self.lfw_dir = '' # utils.make_dir(self.project_dir + 'data/lfw/')
+        self.lfw_dir = ''
+        # self.lfw_dir = utils.make_dir(self.project_dir + 'data/lfw/lfw_mtcnnalign_160/')
 
         # Model
         self.pretrained_model_dir = '20170512-110547'
@@ -53,14 +54,14 @@ class init_value():
         if not os.path.exists(self.pretrained_model):
             download_and_extract.download_and_extract_file(self.pretrained_model_dir, self.pre_model_dir)
 
-        self.feature_model_dir = '20170512-110547'
+        self.feature_model_dir = '20170512-110547' #'20180207-000626'
         self.feature_model = self.pre_model_dir + self.feature_model_dir + '/' + self.feature_model_dir + '.pb'
 
         self.predictor_68_face_landmarks = 'shape_predictor_68_face_landmarks.dat.bz2'
         utils.shape_predictor_68_face_landmarks_download(self.pre_model_dir, self.predictor_68_face_landmarks)
 
         # file name
-        self.classifier_filename = self.pre_model_dir + 'my_classifier.pkl'+train_cnt
+        self.classifier_filename = self.pre_model_dir + self.feature_model_dir+'_my_classifier.pkl'+train_cnt
         self.gallery_filename = self.pre_model_dir + self.feature_model_dir + '_gallery'+gallery_cnt
         self.gallery_eval = self.pre_model_dir + self.feature_model_dir + '_gallery'+'_eval'+eval_cnt
         self.font_location = self.project_dir + 'font/ttf/NanumBarunGothic.ttf'

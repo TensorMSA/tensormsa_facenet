@@ -12,19 +12,19 @@ class Facenet_run():
         if self.rotation == True:
             self.data_dir = self.train_rotation_dir
 
-        self.max_nrof_epochs = 2
-        self.epoch_size = 3
+        self.max_nrof_epochs = 500
+        self.epoch_size = 1000
 
-        self.learning_rate = 0.1
+        self.learning_rate = 0.001
         self.learning_rate_decay_epochs = 100
         self.learning_rate_decay_factor = 1.0
         self.moving_average_decay = 0.9999
-        self.optimizer = 'ADAGRAD'
-        self.keep_probability = 1.0
-        self.weight_decay = 0.0
+        self.optimizer = 'ADAM'
+        self.keep_probability = 0.8
+        self.weight_decay = 5e-5
 
-        self.center_loss_factor = 0.0
-        self.center_loss_alfa = 0.95
+        self.center_loss_factor = 1e-2
+        self.center_loss_alfa = 0.9
 
         self.model_def = 'models.inception_resnet_v1'
         self.filter_filename = ''
