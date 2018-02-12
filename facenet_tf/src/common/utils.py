@@ -158,7 +158,7 @@ def make_feature(args):
 
             class_names = [cls.name.replace('_', ' ') for cls in dataset]
 
-            np.savez(args.gallery_filename, emb_array, labels, class_names)
+            np.savez(args.gallery_filename, emb_array, labels, class_names, paths)
 
 def train_weight(emb_array, labels, sess):
     # placeholder is used for feeding data.
