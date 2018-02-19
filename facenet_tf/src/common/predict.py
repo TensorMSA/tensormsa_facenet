@@ -17,6 +17,8 @@ import dlib
 from imutils.face_utils import rect_to_bb
 import face_recognition
 import matplotlib.pyplot as plt
+from sklearn.metrics.pairwise import cosine_similarity
+import facenet_tf.src.common.utils as utils
 
 def getpredict(self, sess, frame):
     saveframe = frame
@@ -131,17 +133,20 @@ def getpredict(self, sess, frame):
     return frame
 
 def getpredict_test(self, sess):
-    pairfile = np.load(self.gallery_filename + '.npz')
-    self.emb_array = pairfile['arr_0']
-    self.emb_labels = pairfile['arr_1']
-    self.class_names = pairfile['arr_2']
+    if os.path.exists(self.gallery_filename + '.npz'):
+        pairfile = np.load(self.gallery_filename + '.npz')
+        self.emb_array = pairfile['arr_0']
+        self.emb_labels = pairfile['arr_1']
+        self.class_names = pairfile['arr_2']
+        self.file_pathes = pairfile['arr_3']
 
-    pairfile_eval = np.load(self.gallery_eval + '.npz')
-    emb_array_eval = pairfile_eval['arr_0']
-    emb_labels_eval = pairfile_eval['arr_1']
-    class_names_eval = pairfile_eval['arr_2']
+    if os.path.exists(self.gallery_eval + '.npz'):
+        pairfile_eval = np.load(self.gallery_eval + '.npz')
+        emb_array_eval = pairfile_eval['arr_0']
+        emb_labels_eval = pairfile_eval['arr_1']
+        class_names_eval = pairfile_eval['arr_2']
+        file_pathes_eval = pairfile_eval['arr_3']
 
-    self.debug = False
     emb_cnt = 0
     eval_class = []
     eval_true = []
@@ -156,6 +161,9 @@ def getpredict_test(self, sess):
         emb_class = class_names_eval[emb_labels_eval[emb_cnt]]
 
         if eval_class.count(emb_class) == 0:
+            print('---------------------------------------------------------------------------------------------------')
+            print('Class Name:'+emb_class)
+            print('---------------------------------------------------------------------------------------------------')
             eval_class.append(emb_class)
             eval_true.append(0)
             eval_false.append(0)
@@ -171,6 +179,7 @@ def getpredict_test(self, sess):
             eval_unknown[class_idx] += 1
         else:
             eval_false[class_idx] += 1
+            print('False:'+file_pathes_eval[emb_cnt])
 
         emb_cnt += 1
 
@@ -260,10 +269,7 @@ def get_predict_index(self):
                 parray.append(str(predictions[0][pcnt])[:7] + '_' + self.class_names[pcnt])
                 log_cnt += 1
     elif self.pair_type == 'svm_pair':
-        embv = self.emb_array * self.emb
-        dist = []
-        # for e in embv:
-        #     dist.append(np.sqrt(np.sum(np.square(e))))
+        embv = utils.emb_calc(self.emb_array, self.emb)
         predictions = self.model.predict_proba(embv)
         best_class_indices = [self.emb_labels[np.argmax(predictions, axis=0)[0]]]
         best_class_probabilities = np.amax(predictions, axis=0)
@@ -273,9 +279,13 @@ def get_predict_index(self):
                 0] > self.prediction_max:
                 parray.append(str(predictions[pcnt][0])[:7] + '_' + self.class_names[self.emb_labels[pcnt]])
                 log_cnt += 1
-    elif self.pair_type == 'distance':
-        predictions = np.sqrt(np.sum(np.square(self.emb_array - self.emb), axis=1))
-        predictions = 1 - predictions
+    elif self.pair_type.count('distance') > 0:
+        if self.pair_type.count('cos') > 0:
+            predictions = utils.emb_calc(self.emb_array, self.emb, 'cos')
+        elif self.pair_type.count('sub') > 0:
+            predictions = utils.emb_calc(self.emb_array, self.emb, 'sub')
+
+
         distmax = np.argmax(predictions)
         best_class_indices = [self.emb_labels[distmax]]
         best_class_probabilities = [predictions[distmax]]
@@ -286,7 +296,7 @@ def get_predict_index(self):
                 log_cnt += 1
 
     elif self.pair_type == 'cnn_pair':
-        emb_sub = self.emb_array * self.emb
+        emb_sub = utils.emb_calc(self.emb_array, self.emb)
         with tf.Graph().as_default():
             with tf.Session() as sess:
                 # placeholder is used for feeding data.

@@ -12,6 +12,14 @@ class Facenet_run():
 
         utils.make_feature(self)
 
+        # Eval
+        self.model = self.feature_model
+        self.output_dir = self.eval_detect_dir
+        if self.rotation == True:
+            self.output_dir = self.eval_rotation_dir
+        self.gallery_filename = self.gallery_eval
+        utils.make_feature(self)
+
 if __name__ == '__main__':
     Facenet_run().run()
 

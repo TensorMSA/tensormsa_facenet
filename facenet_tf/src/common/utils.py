@@ -6,6 +6,11 @@ import matplotlib.pyplot as plt
 from keras.utils import np_utils
 import random, copy
 import math
+from scipy import spatial
+import scipy.spatial.distance
+from numpy import dot
+from numpy.linalg import norm
+
 
 # common utils
 def shape_predictor_68_face_landmarks_download(down_pred_path, bz_pred_file):
@@ -40,8 +45,8 @@ def get_images_labels_pair(emb_array, labels, dataset):
                 labels_pair.append(0)
             else:
                 labels_pair.append(1)
-                embsub = emb_array[i] * emb_array[j]
-                emb_array_pair[p] = embsub
+                emb = emb_calc(emb_array[i], emb_array[j])
+                emb_array_pair[p] = emb
                 p += 1
 
         print(str(i+1))
@@ -63,7 +68,7 @@ def get_images_labels_pair_same(emb_array, labels, dataset):
         for j in range(nrof_images):
             if labels[i] == labels[j]:
                 labels_pair.append(0)
-                embv = emb_array[i] * emb_array[j]
+                embv = emb_calc(emb_array[i], emb_array[j])
                 emb_array_pair[pair_cnt] = embv
                 pair_cnt += 1
 
@@ -76,7 +81,7 @@ def get_images_labels_pair_same(emb_array, labels, dataset):
             else:
                 r_index = random.choice(list(enumerate(labels_copy)))[0]
                 labels_pair.append(1)
-                embv = emb_array[i] * emb_copy[r_index]
+                embv = emb_calc(emb_array[i], emb_copy[r_index])
                 emb_array_pair[pair_cnt] = embv
                 pair_cnt += 1
                 diff_cnt += 1
@@ -97,17 +102,17 @@ def get_images_labels_pair_same(emb_array, labels, dataset, class_names):
         for i in range(index,end):
             for j in range(index,end):
                 labels_pair.append(0)
-                embv = emb_array[i] * emb_array[j]
+                embv = emb_calc(emb_array[i], emb_array[j])
                 emb_array_pair.append(embv)
             if index < middle:
                 for j in range(index + len(data),end + len(data)):
                     labels_pair.append(1)
-                    embv = emb_array[i] * emb_array[j]
+                    embv = emb_calc(emb_array[i], emb_array[j])
                     emb_array_pair.append(embv)
             else:
                 for j in range(0,len(data)):
                     labels_pair.append(1)
-                    embv = emb_array[i] * emb_array[j]
+                    embv = emb_calc(emb_array[i], emb_array[j])
                     emb_array_pair.append(embv)
             print(i)
     return emb_array_pair, labels_pair
@@ -228,6 +233,26 @@ def make_dir(dir):
     if not os.path.exists(dir):
         os.makedirs(dir)
     return dir
+
+def emb_calc(vector, matrix, type = 'ip'):
+    if type == 'ip':
+        emb = vector * matrix
+    elif type == 'sub':
+        emb = 1 - np.sqrt(np.sum(np.square(vector - matrix), axis=1))
+    elif type == 'cos':# cosine_similarity
+        # matrix_reshape = matrix.reshape(1, -1)
+        #
+        # vector_reshape = vector.reshape(len(vector), -1)
+        #
+        # sum1 = np.sum(vector_reshape*matrix_reshape,axis=1)
+        # sum2 = np.sqrt(np.sum(matrix_reshape**2,axis=1))
+        # sum3 = np.sqrt(np.sum(vector_reshape**2,axis=1))
+        # emb = ( sum1 / ( sum2 * sum3 ) )[::-1]
+        # emb = 1 - emb
+
+        emb = 1 - dot(vector, matrix) / (norm(vector) * norm(matrix))
+
+    return emb
 
 # npzfile = np.load('/home/dev/tensormsa_facenet/facenet_tf/pre_model/20170512-110547_gallery_bak.npz')
 # emb_array = npzfile['arr_0']

@@ -62,7 +62,7 @@ def main(args):
         with sess.as_default():
             # pnet, rnet, onet = align.detect_face.create_mtcnn(sess, None)
             # Mrege --->
-            pnet, rnet, onet = detect_face.create_mtcnn(sess, None)
+            args.pnet, args.rnet, args.onet = detect_face.create_mtcnn(sess, None)
 
     # minsize = 20 # minimum size of face
     # threshold = [ 0.6, 0.7, 0.7 ]  # three steps's threshold

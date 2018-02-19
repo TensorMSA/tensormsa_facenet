@@ -10,7 +10,7 @@ class init_value():
 
         self.rotation = False
         self.detect_type = 'hog' # dlib, mtcnn, hog, cnn
-        self.pair_type = 'distance'  # svm, svm_pair, cnn_pair, distance
+        self.pair_type = 'svm'  # svm, svm_pair, cnn_pair, distance_sub, distance_cos
 
         self.project_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
         self.gpu_memory_fraction = 0.5
@@ -24,12 +24,16 @@ class init_value():
         self.seed = 666
 
         # Make Directory
+        feature_cnt = ''
         train_cnt = ''
         eval_cnt = ''
         gallery_cnt = ''
         data_dir = 'data'
         pre_model_dir = 'pre_model'
 
+        self.feature_dir = utils.make_dir(self.project_dir + data_dir + '/feature_data' + feature_cnt + '/')
+        self.feature_detect_dir = utils.make_dir(self.project_dir + data_dir + '/feature_detect' + feature_cnt + '/')
+        self.feature_rotation_dir = utils.make_dir(self.project_dir + data_dir + '/feature_rotation' + feature_cnt + '/')
         self.train_dir = utils.make_dir(self.project_dir + data_dir +'/train_data'+train_cnt+'/')
         self.train_detect_dir = utils.make_dir(self.project_dir + data_dir +'/train_detect'+train_cnt+'/')
         self.train_rotation_dir = utils.make_dir(self.project_dir + data_dir +'/train_rotation'+train_cnt+'/')
@@ -61,7 +65,7 @@ class init_value():
         utils.shape_predictor_68_face_landmarks_download(self.pre_model_dir, self.predictor_68_face_landmarks)
 
         # file name
-        self.classifier_filename = self.pre_model_dir + self.feature_model_dir+'_my_classifier.pkl'+train_cnt
+        self.classifier_filename = self.pre_model_dir + self.feature_model_dir+'_my_classifier_'+self.pair_type+'.pkl'+train_cnt
         self.gallery_filename = self.pre_model_dir + self.feature_model_dir + '_gallery'+gallery_cnt
         self.gallery_eval = self.pre_model_dir + self.feature_model_dir + '_gallery'+'_eval'+eval_cnt
         self.font_location = self.project_dir + 'font/ttf/NanumBarunGothic.ttf'

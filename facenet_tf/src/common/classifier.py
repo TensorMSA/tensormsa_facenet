@@ -107,10 +107,11 @@ def main(args):
                 elif args.pair_type == 'svm' or args.pair_type == 'svm_pair':
                     model = SVC(kernel='linear', probability=True)
                     class_names = [cls.name.replace('_', ' ') for cls in dataset]
+                    print('Model fit Total Labels:'+str(len(labels)))
                     if args.pair_type == 'svm_pair':
                         emb_array, labels = utils.get_images_labels_pair_same(emb_array, labels, dataset, class_names)
                         class_names = ['same', 'diff']
-                    print('Model fit start... True count('+str(labels.count(0))+'), False count('+str(labels.count(1))+')')
+                        print('Model fit start... True count('+str(labels.count(0))+'), False count('+str(labels.count(1))+')')
 
                     model = model.fit(emb_array, labels)
 

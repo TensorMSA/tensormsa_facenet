@@ -9,10 +9,26 @@ class Facenet_run():
         self.detect_multiple_faces = False
         ####################################################
         # Train Data Detect & Rotation
+        self.input_dir = self.feature_dir
+        self.output_dir = self.feature_detect_dir
+        if self.rotation == True:
+            self.output_dir = self.feature_rotation_dir
+
+        align_main(self)
+
+        # Train Data Detect & Rotation
         self.input_dir = self.train_dir
         self.output_dir = self.train_detect_dir
         if self.rotation == True:
             self.output_dir = self.train_rotation_dir
+
+        align_main(self)
+
+        # Train Data Detect & Rotation
+        self.input_dir = self.eval_dir
+        self.output_dir = self.eval_detect_dir
+        if self.rotation == True:
+            self.output_dir = self.eval_rotation_dir
 
         align_main(self)
 

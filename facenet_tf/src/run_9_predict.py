@@ -30,7 +30,7 @@ import facenet_tf.src.common.predict as predict
 class FaceRecognitionRun():
     def _init_value(self, runtype):
         self.runtype = runtype # test, real
-
+        self.debug = True
         self.readImageSizeX = 0.5
         self.readImageSizeY = 0.5
         self.viewImageSizeX = 2
@@ -39,8 +39,9 @@ class FaceRecognitionRun():
         self.findlist = ['', '', '']  # 배열에 모두 동일한 값이 들어가야 인증이 됨.
         self.boxes_min = 50  # detect min box size
         self.stand_box = [30, 20]  # top left(width, height)
-        self.prediction_max = 0.1  # 이 수치 이상 정합성을 보여야 인정 됨.
-        self.prediction_cnt = 6  # 로그를 보여주는 개수를 정함
+        self.prediction_max = 0.01  # 이 수치 이상 정합성을 보여야 인정 됨.
+        self.prediction_cnt = 6
+        # 로그를 보여주는 개수를 정함
         self.eval_log_cnt = 100 # 평가중 몇번마다 로그를 찍을지 결정을 한다.
 
         self.stand_box_color = (255, 255, 255)
@@ -80,7 +81,7 @@ class FaceRecognitionRun():
         self.phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
 
         # Model Load
-        if self.pair_type != 'distance':
+        if self.pair_type.count('distance') == 0:
             classifier_filename_exp = os.path.expanduser(self.classifier_filename)
             with open(classifier_filename_exp, 'rb') as infile:
                 (self.model, self.class_names) = pickle.load(infile)
