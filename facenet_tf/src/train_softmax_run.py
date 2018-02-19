@@ -8,18 +8,18 @@ class Facenet_run():
 
         self.logs_base_dir = self.pre_model_dir
         self.models_base_dir = self.pre_model_dir
-        self.data_dir = self.train_detect_dir
+        self.data_dir = self.feature_detect_dir
         if self.rotation == True:
-            self.data_dir = self.train_rotation_dir
+            self.data_dir = self.feature_rotation_dir
 
-        self.max_nrof_epochs = 500
+        self.max_nrof_epochs = 1000
         self.epoch_size = 1000
 
         self.learning_rate = 0.001
         self.learning_rate_decay_epochs = 100
         self.learning_rate_decay_factor = 1.0
         self.moving_average_decay = 0.9999
-        self.optimizer = 'ADAM'
+        self.optimizer = 'ADAGRAD'
         self.keep_probability = 0.8
         self.weight_decay = 5e-5
 

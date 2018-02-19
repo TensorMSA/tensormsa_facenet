@@ -21,21 +21,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 import facenet_tf.src.common.utils as utils
 
 def getpredict(self, sess, frame):
-    saveframe = frame
-    frame = cv2.resize(frame, (0, 0), fx=self.readImageSizeX, fy=self.readImageSizeY)
-
-    if self.gallery_load_flag:
-        pairfile = np.load(self.gallery_filename + '.npz')
-        self.emb_array = pairfile['arr_0']
-        self.emb_labels = pairfile['arr_1']
-        self.class_names = pairfile['arr_2']
-
-        self.stand_box = [self.stand_box[0], self.stand_box[1]]
-        self.stand_box.append(frame.shape[1] - self.stand_box[0])
-        self.stand_box.append(frame.shape[0] - self.stand_box[1])
-
-        self.gallery_load_flag = False
-
     frame = self.draw_border(frame, (self.stand_box[0], self.stand_box[1]), (self.stand_box[2], self.stand_box[3]),
                              self.stand_box_color, 2, 10, 20)
 
@@ -76,15 +61,15 @@ def getpredict(self, sess, frame):
     feed_dict = {self.images_placeholder: prewhitened_reshape, self.phase_train_placeholder: False}
     self.emb = sess.run(self.embeddings, feed_dict=feed_dict)
 
-    best_class_indices, best_class_probabilities = get_predict_index(self)
+    best_class_indices, best_class_probabilities, _ = get_predict_index(self)
+    if best_class_indices[0] != None:
+        fcnt = 0
+        for flist in self.findlist:
+            pre = flist
+            cur = self.class_names[best_class_indices[0]]
+            preun = pre.lower().find('unknown')
+            curun = cur.lower().find('unknown')
 
-    fcnt = 0
-    for flist in self.findlist:
-        pre = flist
-        cur = self.class_names[best_class_indices[0]]
-        preun = pre.lower().find('unknown')
-        curun = cur.lower().find('unknown')
-        if best_class_probabilities[0] > self.prediction_max:
             if curun > -1:
                 cur = 'unknown'
 
@@ -97,55 +82,43 @@ def getpredict(self, sess, frame):
                 self.logger.error('Current Fail Predict : ' + self.class_names[best_class_indices[0]] + '(' + str(
                     best_class_probabilities[0])[:5] + ')')
                 reset_list(self.findlist)
-        fcnt += 1
-    # print(self.findlist)
-    if '' not in self.findlist or self.findlist.count('unknown') == len(self.findlist):
-        # save
-        save_image(self, saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
+            fcnt += 1
+        # print(self.findlist)
+        if '' not in self.findlist or self.findlist.count('unknown') == len(self.findlist):
+            # save
+            save_image(self, self.saveframe, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
 
-        resultFlag = 'Y'
-        result = self.class_names[best_class_indices[0]]
-        result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
-        if self.class_names[best_class_indices[0]].lower().find('unknown') > -1:
-            for rcnt in range(len(self.findlist)):
-                if self.findlist[rcnt] == '':
-                    resultFlag = 'N'
-                    break
+            resultFlag = 'Y'
+            result = self.class_names[best_class_indices[0]]
+            result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
+            if self.class_names[best_class_indices[0]].lower().find('unknown') > -1:
+                for rcnt in range(len(self.findlist)):
+                    if self.findlist[rcnt] == '':
+                        resultFlag = 'N'
+                        break
 
-            if resultFlag == 'Y':
-                result = self.findlist[rcnt]
-                result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
+                if resultFlag == 'Y':
+                    result = self.findlist[rcnt]
+                    result_names = result + '(' + str(best_class_probabilities[0])[:5] + ')'
 
-        frame = Image.fromarray(np.uint8(frame))
-        draw = ImageDraw.Draw(frame)
-        font = ImageFont.truetype(self.font_location, self.name_font_size)
-        draw.text((boxes[0][0], boxes[0][1] - 15), result_names, self.text_color, font=font)
-        font = ImageFont.truetype(self.font_location, self.result_font_size)
-        if self.findlist.count('unknown') > 0:
-            result_names = ''
-        else:
-            result_names = result + ' 님 인증 되었습니다.'
-            print(result_names)
-        draw.text((self.stand_box[0], self.stand_box[1] - self.result_font_size), result_names, self.text_color, font=font)
-        frame = np.array(frame)
-        reset_list(self.findlist)
-        # self.save_image(frame, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
+            frame = Image.fromarray(np.uint8(frame))
+            draw = ImageDraw.Draw(frame)
+            font = ImageFont.truetype(self.font_location, self.name_font_size)
+            draw.text((boxes[0][0], boxes[0][1] - 15), result_names, self.text_color, font=font)
+            font = ImageFont.truetype(self.font_location, self.result_font_size)
+            if self.findlist.count('unknown') > 0:
+                result_names = ''
+            else:
+                result_names = result + ' 님 인증 되었습니다.'
+                print(result_names)
+            draw.text((self.stand_box[0], self.stand_box[1] - self.result_font_size), result_names, self.text_color, font=font)
+            frame = np.array(frame)
+            reset_list(self.findlist)
+            # self.save_image(frame, self.class_names[best_class_indices[0]], str(best_class_probabilities[0])[:5])
     return frame
 
 def getpredict_test(self, sess):
-    if os.path.exists(self.gallery_filename + '.npz'):
-        pairfile = np.load(self.gallery_filename + '.npz')
-        self.emb_array = pairfile['arr_0']
-        self.emb_labels = pairfile['arr_1']
-        self.class_names = pairfile['arr_2']
-        self.file_pathes = pairfile['arr_3']
-
-    if os.path.exists(self.gallery_eval + '.npz'):
-        pairfile_eval = np.load(self.gallery_eval + '.npz')
-        emb_array_eval = pairfile_eval['arr_0']
-        emb_labels_eval = pairfile_eval['arr_1']
-        class_names_eval = pairfile_eval['arr_2']
-        file_pathes_eval = pairfile_eval['arr_3']
+    e_array, e_label, self.e_class, e_path = utils.get_npz_file(self.gallery_eval)
 
     emb_cnt = 0
     eval_class = []
@@ -153,12 +126,14 @@ def getpredict_test(self, sess):
     eval_false = []
     eval_unknown = []
 
-    for emb in emb_array_eval:
+    for emb in e_array:
         if emb_cnt%self.eval_log_cnt == 0 and emb_cnt != 0:
             set_eval_log(eval_true, eval_false, eval_unknown)
 
-        self.emb = emb
-        emb_class = class_names_eval[emb_labels_eval[emb_cnt]]
+        self.emb = emb.reshape(1, -1)
+        best_class_indices, best_class_probabilities, parray = get_predict_index(self)
+
+        emb_class = self.e_class[e_label[emb_cnt]]
 
         if eval_class.count(emb_class) == 0:
             print('---------------------------------------------------------------------------------------------------')
@@ -171,15 +146,15 @@ def getpredict_test(self, sess):
 
         class_idx = eval_class.index(emb_class)
 
-        best_class_indices, best_class_probabilities = get_predict_index(self)
-
-        if emb_class == self.class_names[best_class_indices]:
-            eval_true[class_idx] += 1
-        elif self.class_names[best_class_indices][0].lower().count('unknown') > 0:
-            eval_unknown[class_idx] += 1
-        else:
-            eval_false[class_idx] += 1
-            print('False:'+file_pathes_eval[emb_cnt])
+        if best_class_indices[0] != None:
+            if emb_class == self.class_names[best_class_indices[0]]:
+                eval_true[class_idx] += 1
+            elif self.class_names[best_class_indices][0].lower().count('unknown') > 0:
+                eval_unknown[class_idx] += 1
+            else:
+                eval_false[class_idx] += 1
+                print('False:'+e_path[emb_cnt])
+                print(parray)
 
         emb_cnt += 1
 
@@ -263,12 +238,18 @@ def get_predict_index(self):
         best_class_indices = np.argmax(predictions, axis=1)
         best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
 
-        for pcnt in predictions[0].argsort():
-            if self.prediction_cnt > log_cnt and predictions[0][pcnt] < 1 and predictions[0][
-                pcnt] > self.prediction_max:
-                parray.append(str(predictions[0][pcnt])[:7] + '_' + self.class_names[pcnt])
-                log_cnt += 1
+        for pcnt in predictions[0].argsort()[::-1]:
+            if self.prediction_cnt > log_cnt and predictions[0][pcnt] < 1:
+                if predictions[0][pcnt] >= self.prediction_max:
+                    parray.append(str(predictions[0][pcnt])[:7] + '_' + self.class_names[pcnt])
+                    log_cnt += 1
     elif self.pair_type == 'svm_pair':
+        if self.gallery_load_flag:
+            self.emb_array, self.emb_labels, self.class_names, _ = utils.get_npz_file(self.gallery_filename)
+            self.gallery_load_flag = False
+
+        self.prediction_max = self.prediction_svm_pair_max
+
         embv = utils.emb_calc(self.emb_array, self.emb)
         predictions = self.model.predict_proba(embv)
         best_class_indices = [self.emb_labels[np.argmax(predictions, axis=0)[0]]]
@@ -276,7 +257,7 @@ def get_predict_index(self):
 
         for pcnt in predictions[:, 0].argsort()[::-1]:
             if self.prediction_cnt > log_cnt and predictions[pcnt][0] < 1 and predictions[pcnt][
-                0] > self.prediction_max:
+                0] >= self.prediction_max:
                 parray.append(str(predictions[pcnt][0])[:7] + '_' + self.class_names[self.emb_labels[pcnt]])
                 log_cnt += 1
     elif self.pair_type.count('distance') > 0:
@@ -285,13 +266,12 @@ def get_predict_index(self):
         elif self.pair_type.count('sub') > 0:
             predictions = utils.emb_calc(self.emb_array, self.emb, 'sub')
 
-
         distmax = np.argmax(predictions)
         best_class_indices = [self.emb_labels[distmax]]
         best_class_probabilities = [predictions[distmax]]
 
         for pcnt in predictions.argsort()[::-1]:
-            if self.prediction_cnt > log_cnt and predictions[pcnt] > self.prediction_max:
+            if self.prediction_cnt > log_cnt and predictions[pcnt] >= self.prediction_max:
                 parray.append(str(predictions[pcnt])[:7] + '_' + self.class_names[self.emb_labels[pcnt]])
                 log_cnt += 1
 
@@ -316,10 +296,15 @@ def get_predict_index(self):
             parray.append(str(predictions[pcnt][0])[:7] + '_' + self.class_names[self.emb_labels[pcnt]])
 
     # print('----------------------------------------------------------------------------------')
-    if len(parray) > 1 and self.debug:
+    if len(parray) > 0 and self.debug:
         print(parray)
     # print('----------------------------------------------------------------------------------')
-    return best_class_indices, best_class_probabilities
+    if best_class_probabilities[0] < self.prediction_max:
+        best_class_indices = [None]
+        best_class_probabilities = [None]
+        parray = [None]
+
+    return best_class_indices, best_class_probabilities, parray
 
 def set_predict_msg(msgType):
     if msgType == 1:
@@ -338,6 +323,8 @@ def draw_text(self, frame, text, boxes):
     draw.text((boxes[0], boxes[1] - self.alert_font_size), text, self.alert_color, font=font)
     frame = np.array(frame)
     return frame
+
+
 
 def save_image(self, frame, result_names=None, result_percent=None):
     if result_names == None:

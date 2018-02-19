@@ -9,8 +9,9 @@ class init_value():
         self.gallery_load_flag = True
 
         self.rotation = False
+
         self.detect_type = 'hog' # dlib, mtcnn, hog, cnn
-        self.pair_type = 'svm'  # svm, svm_pair, cnn_pair, distance_sub, distance_cos
+        self.pair_type = 'svm_pair'  # svm, svm_pair, cnn_pair, distance_sub, distance_cos
 
         self.project_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
         self.gpu_memory_fraction = 0.5
@@ -58,7 +59,7 @@ class init_value():
         if not os.path.exists(self.pretrained_model):
             download_and_extract.download_and_extract_file(self.pretrained_model_dir, self.pre_model_dir)
 
-        self.feature_model_dir = '20170512-110547' #'20180207-000626'
+        self.feature_model_dir = '20170512-110547' #'20180212-062537' #'20180207-000626' #'20170512-110547'
         self.feature_model = self.pre_model_dir + self.feature_model_dir + '/' + self.feature_model_dir + '.pb'
 
         self.predictor_68_face_landmarks = 'shape_predictor_68_face_landmarks.dat.bz2'
@@ -67,7 +68,8 @@ class init_value():
         # file name
         self.classifier_filename = self.pre_model_dir + self.feature_model_dir+'_my_classifier_'+self.pair_type+'.pkl'+train_cnt
         self.gallery_filename = self.pre_model_dir + self.feature_model_dir + '_gallery'+gallery_cnt
-        self.gallery_eval = self.pre_model_dir + self.feature_model_dir + '_gallery'+'_eval'+eval_cnt
+        self.gallery_train = self.pre_model_dir + self.feature_model_dir + '_gallery' + '_train'+eval_cnt
+        self.gallery_eval = self.pre_model_dir + self.feature_model_dir + '_gallery' + '_eval' + eval_cnt
         self.font_location = self.project_dir + 'font/ttf/NanumBarunGothic.ttf'
 
 

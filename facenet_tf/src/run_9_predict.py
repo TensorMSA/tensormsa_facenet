@@ -30,7 +30,6 @@ import facenet_tf.src.common.predict as predict
 class FaceRecognitionRun():
     def _init_value(self, runtype):
         self.runtype = runtype # test, real
-        self.debug = True
         self.readImageSizeX = 0.5
         self.readImageSizeY = 0.5
         self.viewImageSizeX = 2
@@ -39,10 +38,11 @@ class FaceRecognitionRun():
         self.findlist = ['', '', '']  # 배열에 모두 동일한 값이 들어가야 인증이 됨.
         self.boxes_min = 50  # detect min box size
         self.stand_box = [30, 20]  # top left(width, height)
-        self.prediction_max = 0.01  # 이 수치 이상 정합성을 보여야 인정 됨.
+        self.prediction_max = 0.05  # 이 수치 이상 정합성을 보여야 인정 됨.
+        self.prediction_svm_pair_max = 0.501
         self.prediction_cnt = 6
         # 로그를 보여주는 개수를 정함
-        self.eval_log_cnt = 100 # 평가중 몇번마다 로그를 찍을지 결정을 한다.
+        self.eval_log_cnt = 3000 # 평가중 몇번마다 로그를 찍을지 결정을 한다.
 
         self.stand_box_color = (255, 255, 255)
         self.alert_color = (0, 0, 255)
@@ -100,15 +100,28 @@ class FaceRecognitionRun():
         self.detector = dlib.get_frontal_face_detector()
         self.fa = FaceAligner(self.predictor, desiredFaceWidth=self.image_size + self.cropped_size)
 
+        self.gallery_load_flag = True
+
         if self.runtype == 'test':
+            self.debug = False
             predict.getpredict_test(self, sess)
         else:
+            self.debug = True
             self.pretime = '99'  # 1 second save
             video_capture = cv2.VideoCapture(0)
             self.predict_flag = True
+
+            self.stand_box_flag = True
+
             while True:
                 ret, frame = video_capture.read()
                 frame = cv2.flip(frame, 1)
+                self.saveframe = frame
+                frame = cv2.resize(frame, (0, 0), fx=self.readImageSizeX, fy=self.readImageSizeY)
+                if self.stand_box_flag:
+                    self.stand_box = [self.stand_box[0], self.stand_box[1]]
+                    self.stand_box.append(frame.shape[1] - self.stand_box[0])
+                    self.stand_box.append(frame.shape[0] - self.stand_box[1])
 
                 frame = predict.getpredict(self, sess, frame)
 

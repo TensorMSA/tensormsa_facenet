@@ -96,6 +96,12 @@ def get_images_labels_pair_same(emb_array, labels, dataset, class_names):
     middle = len(labels) / 2
     labels_pair = []
     emb_array_pair = []
+    i = 0
+    for un in dataset:
+        if un.name.lower().count('unknown') > 0:
+            dataset[i:i+1] = []
+        i += 1
+
     for data in dataset:
         index = labels.index(class_names.index(data.name.replace('_',' ')))
         end = index + len(data)
@@ -253,6 +259,21 @@ def emb_calc(vector, matrix, type = 'ip'):
         emb = 1 - dot(vector, matrix) / (norm(vector) * norm(matrix))
 
     return emb
+
+def get_npz_file(filename):
+    emb_array = ''
+    emb_labels = ''
+    class_names = ''
+    file_pathes = ''
+
+    if os.path.exists(filename + '.npz'):
+        pairfile = np.load(filename + '.npz')
+        emb_array = pairfile['arr_0']
+        emb_labels = pairfile['arr_1']
+        class_names = pairfile['arr_2']
+        file_pathes = pairfile['arr_3']
+
+    return emb_array, emb_labels, class_names, file_pathes
 
 # npzfile = np.load('/home/dev/tensormsa_facenet/facenet_tf/pre_model/20170512-110547_gallery_bak.npz')
 # emb_array = npzfile['arr_0']
