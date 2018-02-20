@@ -10,6 +10,7 @@ from scipy import spatial
 import scipy.spatial.distance
 from numpy import dot
 from numpy.linalg import norm
+import operator
 
 
 # common utils
@@ -240,23 +241,13 @@ def make_dir(dir):
         os.makedirs(dir)
     return dir
 
-def emb_calc(vector, matrix, type = 'ip'):
-    if type == 'ip':
-        emb = vector * matrix
-    elif type == 'sub':
+def emb_calc(vector, matrix, type = None):
+    emb = vector * matrix
+
+    if type == 'sub':
         emb = 1 - np.sqrt(np.sum(np.square(vector - matrix), axis=1))
     elif type == 'cos':# cosine_similarity
-        # matrix_reshape = matrix.reshape(1, -1)
-        #
-        # vector_reshape = vector.reshape(len(vector), -1)
-        #
-        # sum1 = np.sum(vector_reshape*matrix_reshape,axis=1)
-        # sum2 = np.sqrt(np.sum(matrix_reshape**2,axis=1))
-        # sum3 = np.sqrt(np.sum(vector_reshape**2,axis=1))
-        # emb = ( sum1 / ( sum2 * sum3 ) )[::-1]
-        # emb = 1 - emb
-
-        emb = 1 - dot(vector, matrix) / (norm(vector) * norm(matrix))
+        emb = ( np.sum(vector*matrix,axis=1) / ( np.sqrt(np.sum(matrix**2,axis=1)) * np.sqrt(np.sum(vector**2,axis=1)) ) )[::-1]
 
     return emb
 

@@ -131,7 +131,6 @@ def getpredict_test(self, sess):
             set_eval_log(eval_true, eval_false, eval_unknown)
 
         self.emb = emb.reshape(1, -1)
-        best_class_indices, best_class_probabilities, parray = get_predict_index(self)
 
         emb_class = self.e_class[e_label[emb_cnt]]
 
@@ -144,6 +143,7 @@ def getpredict_test(self, sess):
             eval_false.append(0)
             eval_unknown.append(0)
 
+        best_class_indices, best_class_probabilities, parray = get_predict_index(self)
         class_idx = eval_class.index(emb_class)
 
         if best_class_indices[0] != None:
@@ -261,9 +261,15 @@ def get_predict_index(self):
                 parray.append(str(predictions[pcnt][0])[:7] + '_' + self.class_names[self.emb_labels[pcnt]])
                 log_cnt += 1
     elif self.pair_type.count('distance') > 0:
+        if self.gallery_load_flag:
+            self.emb_array, self.emb_labels, self.class_names, _ = utils.get_npz_file(self.gallery_filename)
+            self.gallery_load_flag = False
+
         if self.pair_type.count('cos') > 0:
+            self.prediction_max = self.prediction_cos_max
             predictions = utils.emb_calc(self.emb_array, self.emb, 'cos')
         elif self.pair_type.count('sub') > 0:
+            self.prediction_max = self.prediction_sub_max
             predictions = utils.emb_calc(self.emb_array, self.emb, 'sub')
 
         distmax = np.argmax(predictions)

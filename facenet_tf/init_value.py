@@ -11,7 +11,7 @@ class init_value():
         self.rotation = False
 
         self.detect_type = 'mtcnn' # dlib, mtcnn, hog, cnn
-        self.pair_type = 'svm_pair'  # svm, svm_pair, cnn_pair, distance_sub, distance_cos
+        self.pair_type = 'svm'  # svm, svm_pair, cnn_pair, distance_sub, distance_cos
 
         self.project_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
         self.gpu_memory_fraction = 0.5

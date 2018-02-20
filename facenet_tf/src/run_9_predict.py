@@ -40,6 +40,8 @@ class FaceRecognitionRun():
         self.stand_box = [30, 20]  # top left(width, height)
         self.prediction_max = 0.05  # 이 수치 이상 정합성을 보여야 인정 됨.
         self.prediction_svm_pair_max = 0.501
+        self.prediction_sub_max = 0.0001
+        self.prediction_cos_max = 0.0001
         self.prediction_cnt = 6
         # 로그를 보여주는 개수를 정함
         self.eval_log_cnt = 3000 # 평가중 몇번마다 로그를 찍을지 결정을 한다.
@@ -103,7 +105,7 @@ class FaceRecognitionRun():
         self.gallery_load_flag = True
 
         if self.runtype == 'test':
-            self.debug = False
+            self.debug = True
             predict.getpredict_test(self, sess)
         else:
             self.debug = True
