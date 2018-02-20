@@ -195,7 +195,7 @@ def main(args):
         # Build a Graph that trains the model with one batch of examples and updates the model parameters
         train_op = facenet.train(total_loss, global_step, args.optimizer, 
             learning_rate, args.moving_average_decay, tf.global_variables(), args.log_histograms)
-        
+
         # Create a saver
         saver = tf.train.Saver(tf.trainable_variables(), max_to_keep=3)
 
@@ -220,6 +220,7 @@ def main(args):
 
             # Training and validation loop
             print('Running training')
+
             epoch = 0
             while epoch < args.max_nrof_epochs:
                 step = sess.run(global_step, feed_dict=None)
@@ -278,6 +279,7 @@ def train(args, sess, epoch, image_list, label_list, index_dequeue_op, enqueue_o
         lr = args.learning_rate
     else:
         lr = facenet.get_learning_rate_from_file(learning_rate_schedule_file, epoch)
+        print('learning_rate:' + str(lr))
 
     index_epoch = sess.run(index_dequeue_op)
     label_epoch = np.array(label_list)[index_epoch]
@@ -323,6 +325,12 @@ def evaluate(sess, enqueue_op, image_paths_placeholder, labels_placeholder, phas
     
     embedding_size = embeddings.get_shape()[1]
     nrof_images = len(actual_issame)*2
+
+    while True:
+        if nrof_images % batch_size == 0:
+            break
+        batch_size += 1
+
     assert nrof_images % batch_size == 0, 'The number of LFW images must be an integer multiple of the LFW batch size'
     nrof_batches = nrof_images // batch_size
     emb_array = np.zeros((nrof_images, embedding_size))

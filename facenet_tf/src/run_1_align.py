@@ -8,7 +8,7 @@ class Facenet_run():
         self.random_order = False  # random.shuffle(dataset)
         self.detect_multiple_faces = False
         ####################################################
-        # Train Data Detect & Rotation
+        # Feature Data Detect & Rotation
         self.input_dir = self.feature_dir
         self.output_dir = self.feature_detect_dir
         if self.rotation == True:
@@ -24,7 +24,7 @@ class Facenet_run():
 
         align_main(self)
 
-        # Train Data Detect & Rotation
+        # Eval Data Detect & Rotation
         self.input_dir = self.eval_dir
         self.output_dir = self.eval_detect_dir
         if self.rotation == True:
@@ -37,6 +37,15 @@ class Facenet_run():
         self.output_dir = self.gallery_detect_dir
         if self.rotation == True:
             self.output_dir = self.gallery_rotation_dir
+
+        align_main(self)
+
+        # LFW Data Detect & Rotation
+        # self.margin = 32
+        self.input_dir = self.lfw_dir
+        self.output_dir = self.lfw_detect_dir
+        if self.rotation == True:
+            self.output_dir = self.lfw_rotation_dir
 
         align_main(self)
 

@@ -10,7 +10,7 @@ class init_value():
 
         self.rotation = False
 
-        self.detect_type = 'hog' # dlib, mtcnn, hog, cnn
+        self.detect_type = 'mtcnn' # dlib, mtcnn, hog, cnn
         self.pair_type = 'svm_pair'  # svm, svm_pair, cnn_pair, distance_sub, distance_cos
 
         self.project_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
@@ -29,29 +29,29 @@ class init_value():
         train_cnt = ''
         eval_cnt = ''
         gallery_cnt = ''
-        data_dir = 'data'
-        pre_model_dir = 'pre_model'
 
-        self.feature_dir = utils.make_dir(self.project_dir + data_dir + '/feature_data' + feature_cnt + '/')
-        self.feature_detect_dir = utils.make_dir(self.project_dir + data_dir + '/feature_detect' + feature_cnt + '/')
-        self.feature_rotation_dir = utils.make_dir(self.project_dir + data_dir + '/feature_rotation' + feature_cnt + '/')
-        self.train_dir = utils.make_dir(self.project_dir + data_dir +'/train_data'+train_cnt+'/')
-        self.train_detect_dir = utils.make_dir(self.project_dir + data_dir +'/train_detect'+train_cnt+'/')
-        self.train_rotation_dir = utils.make_dir(self.project_dir + data_dir +'/train_rotation'+train_cnt+'/')
-        self.eval_dir = utils.make_dir(self.project_dir + data_dir +'/eval_data'+eval_cnt+'/')
-        self.eval_detect_dir = utils.make_dir(self.project_dir + data_dir +'/eval_detect'+eval_cnt+'/')
-        self.eval_rotation_dir = utils.make_dir(self.project_dir + data_dir +'/eval_rotation'+eval_cnt+'/')
+        self.pre_data_dir = self.project_dir + 'data/'
+        self.pre_datatxt_dir = self.project_dir + 'datatxt/'
+        self.feature_dir = utils.make_dir(self.pre_data_dir + '/feature_data' + feature_cnt + '/')
+        self.feature_detect_dir = utils.make_dir(self.pre_data_dir + '/feature_detect' + feature_cnt + '/')
+        self.feature_rotation_dir = utils.make_dir(self.pre_data_dir + '/feature_rotation' + feature_cnt + '/')
+        self.train_dir = utils.make_dir(self.pre_data_dir +'/train_data'+train_cnt+'/')
+        self.train_detect_dir = utils.make_dir(self.pre_data_dir +'/train_detect'+train_cnt+'/')
+        self.train_rotation_dir = utils.make_dir(self.pre_data_dir +'/train_rotation'+train_cnt+'/')
+        self.eval_dir = utils.make_dir(self.pre_data_dir +'/eval_data'+eval_cnt+'/')
+        self.eval_detect_dir = utils.make_dir(self.pre_data_dir +'/eval_detect'+eval_cnt+'/')
+        self.eval_rotation_dir = utils.make_dir(self.pre_data_dir +'/eval_rotation'+eval_cnt+'/')
+        self.gellery_dir = utils.make_dir(self.pre_data_dir + 'gallery_data'+gallery_cnt+'/')
+        self.gallery_detect_dir = utils.make_dir(self.pre_data_dir + 'gallery_detect'+gallery_cnt+'/')
+        self.gallery_rotation_dir = utils.make_dir(self.pre_data_dir + 'gallery_rotation'+gallery_cnt+'/')
+        self.lfw_dir = utils.make_dir(self.pre_data_dir + 'lfw/')
+        self.lfw_detect_dir = utils.make_dir(self.pre_data_dir + 'lfw_mtcnnpy_160')
+        self.lfw_rotation_dir = utils.make_dir(self.pre_data_dir + 'lfw_mtcnnpy_rotation_160')
 
-        self.gellery_dir = utils.make_dir(self.project_dir + 'data/gallery_data'+gallery_cnt+'/')
-        self.gallery_detect_dir = utils.make_dir(self.project_dir + 'data/gallery_detect'+gallery_cnt+'/')
-        self.gallery_rotation_dir = utils.make_dir(self.project_dir + 'data/gallery_rotation'+gallery_cnt+'/')
-
-        self.pre_model_dir = utils.make_dir(self.project_dir + pre_model_dir + '/')
+        self.pre_model_dir = utils.make_dir(self.project_dir + 'pre_model/')
 
         self.save_dir = utils.make_dir('/hoya_src_root/save_data/')
         self.log_dir = utils.make_dir('/hoya_src_root/log_data/')
-        self.lfw_dir = ''
-        # self.lfw_dir = utils.make_dir(self.project_dir + 'data/lfw/lfw_mtcnnalign_160/')
 
         # Model
         self.pretrained_model_dir = '20170512-110547'
@@ -72,6 +72,9 @@ class init_value():
         self.gallery_eval = self.pre_model_dir + self.feature_model_dir + '_gallery' + '_eval' + eval_cnt
         self.font_location = self.project_dir + 'font/ttf/NanumBarunGothic.ttf'
 
-
-
+        #lfw
+        self.lfw_pairs = self.pre_datatxt_dir + 'pairs.txt'
+        self.lfw_file_ext='png'
+        self.lfw_batch_size=100
+        self.lfw_nrof_folds=10
 

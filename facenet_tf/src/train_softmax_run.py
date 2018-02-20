@@ -1,6 +1,7 @@
 from facenet_tf import init_value
 from facenet_tf.src.common.train_softmax import main as train_softmax_main
 from facenet_tf.src.common.freeze_graph import main as freeze_graph_main
+import facenet_tf.src.common.utils as utils
 
 class Facenet_run():
     def run(self):
@@ -9,13 +10,16 @@ class Facenet_run():
         self.logs_base_dir = self.pre_model_dir
         self.models_base_dir = self.pre_model_dir
         self.data_dir = self.feature_detect_dir
+        self.lfw_dir = self.lfw_detect_dir
         if self.rotation == True:
             self.data_dir = self.feature_rotation_dir
+            self.lfw_dir = self.lfw_rotation_dir
 
         self.max_nrof_epochs = 1000
         self.epoch_size = 1000
 
-        self.learning_rate = 0.001
+        self.learning_rate = -1
+        self.learning_rate_schedule_file = self.pre_datatxt_dir + 'learning_rate_schedule_classifier_msceleb.txt'
         self.learning_rate_decay_epochs = 100
         self.learning_rate_decay_factor = 1.0
         self.moving_average_decay = 0.9999
@@ -32,15 +36,11 @@ class Facenet_run():
         self.filter_min_nrof_images_per_class=0
         self.embedding_size=128
         self.nrof_preprocess_threads=4
-        self.learning_rate_schedule_file='data/learning_rate_schedule.txt'
+
         self.random_flip = True
         self.random_rotate = True
         self.random_crop = True
         self.log_histograms = False
-        self.lfw_pairs='data/pairs.txt'
-        self.lfw_file_ext='png'
-        self.lfw_batch_size=100
-        self.lfw_nrof_folds=10
 
         # Pre Train Model Make
         self.model_dir = train_softmax_main(self)
