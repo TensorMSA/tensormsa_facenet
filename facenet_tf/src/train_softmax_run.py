@@ -25,12 +25,17 @@ class Facenet_run():
         self.moving_average_decay = 0.9999
         self.optimizer = 'ADAGRAD'
         self.keep_probability = 0.8
-        self.weight_decay = 5e-5
+        self.weight_decay = 2e-4
 
-        self.center_loss_factor = 1e-2
+        self.center_loss_factor = 5e-5
         self.center_loss_alfa = 0.9
 
-        self.model_def = 'models.inception_resnet_v1'
+        self.model_def = 'models.inception_resnet_v2'
+        if self.model_def == 'models.inception_resnet_v1':
+            self.batch_size = 70
+        elif self.model_def == 'models.inception_resnet_v2':
+            self.batch_size = 40
+
         self.filter_filename = ''
         self.filter_percentile=100.0
         self.filter_min_nrof_images_per_class=0
